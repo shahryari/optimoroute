@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Basic Layout - jQuery EasyUI Demo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.2/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.0/leaflet.draw.css" />
+    <link href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css" rel="stylesheet" />
+    <script src="https://unpkg.com/leaflet@1.9.2/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.0/leaflet.draw.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.2/dist/notiflix-notify-aio-3.2.2.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="/asset/jquery-easyui-1.10.19/themes/material-teal/easyui.css">
+	<link rel="stylesheet" type="text/css" href="/asset/jquery-easyui-1.10.19/themes/icon.css">
+    <link type="css" rel="stylesheet" href="/asset/jquery-easyui-1.10.19/demo.css" crossorigin="anonymous">
+	<script type="text/javascript" src="/asset/jquery-easyui-1.10.19/jquery.min.js"></script>
+	<script type="text/javascript" src="/asset/jquery-easyui-1.10.19/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="/asset/jquery-easyui-1.10.19/src/jquery.tabs.js"></script>
+    <link href="/asset/fontawesome6/css/fontawesome.css" rel="stylesheet" />
+    <link href="/asset/fontawesome6/css/brands.css" rel="stylesheet" />
+    <link href="/asset/fontawesome6/css/solid.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/asset/style.css" />
+</head>
+<body class="easyui-layout"> 
+	
+	
+		<div data-options="region:'north'" style="height:70px"></div>
+		
+		
+		
+		<div data-options="region:'center'">
+            <div class="easyui-tabs" data-options="tools:'#tab-tools',fit:true,border:false" >
+                <div title="Plan and Optimize" > 
+                    <div class="easyui-layout" data-options="fit:true,border:false" >                        
+                        <div data-options="region:'west',split:true"  style="width:300px;"></div>
+                        <div data-options="region:'center'">
+                            <div class="easyui-layout" data-options="fit:true,border:false" >                        
+                                <div data-options="region:'center'">
+                                    <div id="map"></div>
+                                </div>
+                                <div data-options="region:'south',split:true"  style="height:55%;">
+                                    <div class="easyui-layout" data-options="fit:true,border:false">                        
+                                        <div data-options="region:'north'"  style="height:50px;">
+                                            <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-add'">Add</a>
+        <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-remove'">Remove</a>
+        <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-save'">Save</a>
+                                        </div>
+                                        <div data-options="region:'center'">
+                                            <div class="easyui-tabs" data-options="tools:'#tab-tools',fit:true,border:false" >
+                                                <div title="Orders" style="padding:10px;">
+                                                   
+                                                </div>
+                                                <div id="orders" title="Routes" style="padding:10px;">
+                                                    <table id="orderTable" class="easyui-datagrid"  
+                                                    data-options="singleSelect:true,collapsible:true,url:'datagrid_data1.json',method:'get',fit:true">
+                                                <thead>
+                                                    <tr>
+                                                        <th data-options="field:'OrderID',width:80">Item ID</th>
+                                                        <th data-options="field:'Priority',width:100">Product</th>
+                                                        <th data-options="field:'listprice',width:80,align:'right'">List Price</th>
+                                                        <th data-options="field:'unitcost',width:80,align:'right'">Unit Cost</th>
+                                                        <th data-options="field:'attr1',width:250">Attribute</th>
+                                                        <th data-options="field:'status',width:60,align:'center'">Status</th>
+                                                    </tr>
+                                                </thead>
+                                            </table>
+
+                                                </div>
+                                                <div title="Timeline" style="padding:10px;">
+                                                   
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>   
+                                </div>
+                                
+                            </div>     
+                        </div>
+                    </div>                  
+                </div>
+                <div title="Live" style="padding:10px;"></div>
+                <div title="Analytics"  style="padding:10px;">                    
+                </div>                
+            </div>
+		</div>
+	</div>
+<script src="/asset/script.js"></script>
+</body>
+</html>
