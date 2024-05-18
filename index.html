@@ -17,9 +17,9 @@
 	<script type="text/javascript" src="/asset/jquery-easyui-1.10.19/jquery.min.js"></script>
 	<script type="text/javascript" src="/asset/jquery-easyui-1.10.19/jquery.easyui.min.js"></script>
     <script type="text/javascript" src="/asset/jquery-easyui-1.10.19/src/jquery.tabs.js"></script>
-    <link href="/fontawesome6/css/fontawesome.css" rel="stylesheet" />
-    <link href="/fontawesome6/css/brands.css" rel="stylesheet" />
-    <link href="/fontawesome6/css/solid.css" rel="stylesheet" />
+    <link href="/asset/fontawesome6/css/fontawesome.css" rel="stylesheet" />
+    <link href="/asset/fontawesome6/css/brands.css" rel="stylesheet" />
+    <link href="/asset/fontawesome6/css/solid.css" rel="stylesheet" />
     <link rel="stylesheet" href="/asset/style.css" />
 </head>
 <body class="easyui-layout"> 
@@ -52,24 +52,20 @@
                                                    
                                                 </div>
                                                 <div id="orders" title="Routes" style="padding:10px;">
-                                                    <table class="easyui-datagrid">
-                                                        <thead>
-                                                            <tr>
-                                                                <th data-options="field:'orderID'">Order ID</th>
-                                                                <th data-options="field:'priority'">Priority</th>
-                                                                <th data-options="field:'location'">Location</th>
-                                                                <th data-options="field:'address'">Address</th>
-                                                                <th data-options="field:'duration'">Duration</th>
-                                                                <th data-options="field:'scheduledDriver'">Scheduled Driver</th>
-                                                                <th data-options="field:'stopNumber'">Stop Number</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody  id="orderTable">
-                                                            <tr>
-            <td>001</td><td>name1</td><td>2323</td><td>2323</td><td>2323</td><td>2323</td><td>2323</td>
-        </tr>
-                                                        </tbody>
-                                                    </table>
+                                                    <table id="orderTable" class="easyui-datagrid"  
+                                                    data-options="singleSelect:true,collapsible:true,url:'datagrid_data1.json',method:'get',fit:true">
+                                                <thead>
+                                                    <tr>
+                                                        <th data-options="field:'OrderID',width:80">Item ID</th>
+                                                        <th data-options="field:'Priority',width:100">Product</th>
+                                                        <th data-options="field:'listprice',width:80,align:'right'">List Price</th>
+                                                        <th data-options="field:'unitcost',width:80,align:'right'">Unit Cost</th>
+                                                        <th data-options="field:'attr1',width:250">Attribute</th>
+                                                        <th data-options="field:'status',width:60,align:'center'">Status</th>
+                                                    </tr>
+                                                </thead>
+                                            </table>
+
                                                 </div>
                                                 <div title="Timeline" style="padding:10px;">
                                                    
