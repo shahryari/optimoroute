@@ -80,31 +80,31 @@
      font-weight: bold;
  }
 
-  #drivers {
+  #customer {
       margin-bottom: 20px;
   }
 
-  .driver {
+  .customer {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 8fr;
     margin-bottom: 5px;
     justify-content: space-around;
     align-items: center;
   }
-  .driver-info{
+  .customer-info{
     display: flex;
     flex-direction: column;
   }
-.driver-info-detail{
+.customer-info-detail{
     display: none;
 }
-.driver-lock{
+.customer-lock{
     visibility: hidden;
 }
-.driver-circle {
+.customer-circle {
     visibility: hidden;
 }
-  .driver input {
+  .customer input {
       margin-right: 10px;
   }
 
