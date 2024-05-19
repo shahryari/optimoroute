@@ -4,24 +4,25 @@ $('#dg').datagrid({
     }
 });
 $('input[type=checkbox]').change(function () {
-    const driverId = $(this).attr('id');
+    const customerId = $(this).attr('id');
     const isChecked = $(this).prop('checked');
     if (isChecked) {
-        showIcons(driverId);
+        showIcons(customerId);
+
     } else {
-        hideIcons(driverId);
+        hideIcons(customerId);
     }
 });
 
-function showIcons(driverId) {
-    $(`#${driverId}`).siblings('.driver-lock, .driver-circle').css('visibility', 'visible');
-    $(`#${driverId}`).siblings('.driver-info').find('.driver-info-detail').css('display', 'block');
+function showIcons(customerId) {
+    $(`#${customerId}`).siblings('.customer-lock, .customer-circle').css('visibility', 'visible');
+    $(`#${customerId}`).siblings('.customer-info').find('.customer-info-detail').css('display', 'block');
     $("#orders").addClass("show-orders");
 }
 
-function hideIcons(driverId) {
-    $(`#${driverId}`).siblings('.driver-lock, .driver-circle').css('visibility', 'hidden');
-    $(`#${driverId}`).siblings('.driver-info').find('.driver-info-detail').css('display', 'none');
+function hideIcons(customerId) {
+    $(`#${customerId}`).siblings('.customer-lock, .customer-circle').css('visibility', 'hidden');
+    $(`#${customerId}`).siblings('.customer-info').find('.customer-info-detail').css('display', 'none');
     $("#orders").removeClass("show-orders");
 }
 // Initialize the map
@@ -120,6 +121,9 @@ tabs.forEach((tab) => {
 });
 
 var latlngs = [];
+var markers = {};
+var selectedMarkers = []; // Store selected markers
+var polyline = null; // Store the polyline
 // Orders data
 var orders = [
     {
@@ -159,20 +163,16 @@ var orders = [
         stopNumber: 2,
     },
 ];
+var customers = [
+    { id: 001, location: "East Point", address: [41.398629, 44.887356], duration: "30 min" },
+    { id: 002, location: "Tbilisi Mall", address: [41.270564, 44.77256], duration: "45 min" },
+    { id: 003, location: "City Mall", address: [41.126045, 44.737074], duration: "5 min" },
+    { id: 004, location: "Shop center", address: [41.298629, 44.887356], duration: "40 min" },
+];
 
-// Add a custom icon for numbered markers
-function createNumberedMarker(number, isActive = false) {
-    return L.divIcon({
-        className: isActive ? "custom-icon active-marker" : "custom-icon",
-        html: `<div class='content-icon'><i class='fa-solid fa-location-pin'></i><span class='icon-number'>${number}</span></div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 30],
-        popupAnchor: [0, -30],
-    });
-}
 
 //var orderTable = document.getElementById("orderTable");
-var markers = {}; // Store markers by order ID
+// Store markers by order ID
 $('#orderTable').datagrid({
     url: 'datagrid_data1.json',
     method: 'get',
@@ -185,6 +185,62 @@ $('#orderTable').datagrid({
         { field: 'driver', title: 'Driver', width: 100 },
         { field: 'stopNumber', title: 'Stop Number', width: 80 }
     ]]
+});
+
+// Function to handle marker click
+function onMarkerClick(e) {
+    var marker = e.target;
+    if (!selectedMarkers.includes(marker)) {
+        selectedMarkers.push(marker); // Add marker to selectedMarkers array
+        updatePolyline(); // Update the polyline
+    }
+}
+
+// Function to update polyline based on selected markers
+function updatePolyline() {
+    if (selectedMarkers.length >= 2) {
+        // Remove existing polyline if any
+        if (polyline != null) {
+            if (map.hasLayer(polyline))
+                map.removeLayer(polyline);
+        }
+
+        // Create new polyline
+        var latLngs = selectedMarkers.map(function (marker) {
+            return marker.getLatLng();
+        });
+        polyline = L.polyline(latLngs, { color: 'red' }).addTo(map);
+        selectedMarkers.forEach(function (marker, index) {
+            marker.setIcon(createNumberedMarker(index + 1, false));
+        });
+    }
+    else if (selectedMarkers.length == 1){
+        selectedMarkers.forEach(function (marker, index) {
+            marker.setIcon(createNumberedMarker(index + 1, false));
+        });
+    }
+}
+
+customers.forEach((customer) => {
+    const popupContent = `
+                <div class="popup-header">Customer ID: ${customer.id}</div>
+                <div class="popup-row"><span class="popup-label">Location:</span> ${customer.location}</div>
+                <div class="popup-row"><span class="popup-label">Duration:</span> ${customer.duration}</div>
+            `;
+    var marker = L.marker(customer.address).addTo(map);
+
+    marker.bindPopup(popupContent, { closeButton: false }).on('click', onMarkerClick);
+
+    marker.on("mouseover", function (e) {
+        this.openPopup();
+    });
+
+    // marker.on("mouseout", function (e) {
+    //     this.closePopup();
+    // });
+    //markers[customer.id] = marker; // Store marker by order ID
+    // Add the coordinates to the latlngs array
+    //latlngs.push(customer.address);
 });
 
 orders.forEach((order) => {
@@ -240,6 +296,16 @@ orders.forEach((order) => {
     latlngs.push(order.address);
 });
 
+// Add a custom icon for numbered markers
+function createNumberedMarker(number, isActive = false) {
+    return L.divIcon({
+        className: isActive ? "custom-icon active-marker" : "custom-icon",
+        html: `<div class='content-icon'><i class='fa-solid fa-location-pin'></i><span class='icon-number'>${number}</span></div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        popupAnchor: [0, -30],
+    });
+}
 function highlightMarker(orderId) {
     // Reset all markers to default
     Object.values(markers).forEach((marker) => {
