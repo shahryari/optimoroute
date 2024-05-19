@@ -166,8 +166,8 @@ orders.forEach((order) => {
     var marker = L.marker(order.address, {
         icon: createNumberedMarker(order.stopNumber),
     })
-        .addTo(map)
-        .on("click", clickZoom);
+        .addTo(map);
+        //.on("click", clickZoom);
 
     marker.bindPopup(
         `<b>Order ID:</b> ${order.id}<br><b>Location:</b> ${order.location}<br><b>Driver:</b> ${order.driver}`
