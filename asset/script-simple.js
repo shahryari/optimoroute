@@ -144,6 +144,22 @@ var markers = {};
 var customerMarkers = {};
 var selectedMarkers = []; // Store selected markers
 var polyline = null; // Store the polyline
+var geoJson = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "type": "polyline"
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                ]
+            }
+        }
+    ]
+};
 // Orders data
 var orders = [
     {
@@ -231,24 +247,103 @@ $('#orderTable').datagrid({
 //Function to handle marker click
 function onMarkerClick(e) {
     var marker = e.target;
-    // var polylineGeoJSON = {
-    //     "type": "Feature",
-    //     "properties": {},
-    //     "geometry": {
-    //         "type": "LineString",
-    //         "coordinates": [
-    //             [marker.getLatLng().lng, marker.getLatLng().lat],
-    //             [e.latlng.lng, e.latlng.lat]
-    //         ]
-    //     }
-    // };
 
-    // // Add the GeoJSON object to the map
-    // L.geoJSON(polylineGeoJSON).addTo(map);
-    if (!selectedMarkers.includes(marker)) {
-        selectedMarkers.push(marker); // Add marker to selectedMarkers array
-        updatePolyline(); // Update the polyline
+    // Toggle marker selection state
+    if (selectedMarkers.includes(marker)) {
+        // Remove marker from selectedMarkers array
+        selectedMarkers = selectedMarkers.filter(selectedMarker => selectedMarker !== marker);
+    } else {
+        // Add marker to selectedMarkers array
+        selectedMarkers.push(marker);
+        // Coordinates to add
+        var newCoordinates = [
+            [e.latlng.lng, e.latlng.lat]
+        ];
+
+        // Push the new coordinates into the existing coordinates array
+        geoJson.features[0].geometry.coordinates.push(...newCoordinates);
     }
+    //setGeojsonToMap(geoJson);
+    //updatePolyline(); // Update the polyline
+    drawPolylineFromGeoJSON(geoJson);
+}
+
+
+function drawPolylineFromGeoJSON(geojson) {
+    const feature = L.geoJSON(geojson, {
+        style: function (feature) {
+            return {
+                color: "blue",
+                weight: 2,
+            };
+        },
+        pointToLayer: (feature, latlng) => {
+            if (feature.properties.type === "circle") {
+                return new L.circle(latlng, {
+                    radius: feature.properties.radius,
+                });
+            } else if (feature.properties.type === "circlemarker") {
+                return new L.circleMarker(latlng, {
+                    radius: 10,
+                });
+            } else {
+                return new L.Marker(latlng);
+            }
+        },
+        onEachFeature: function (feature, layer) {
+            drawnItems.addLayer(layer);
+            const coordinates = feature.geometry.coordinates.toString();
+            const result = coordinates.match(/[^,]+,[^,]+/g);
+
+            layer.bindPopup(
+                "<span>Coordinates:<br>" + result.join("<br>") + "</span>"
+            );
+        },
+    }).addTo(map);
+
+    //map.flyToBounds(feature.getBounds());
+
+    // Create polyline from GeoJSON coordinates
+    if (geojson.features[0].geometry.type === "LineString") {
+        const coordinates = geojson.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+        //polyline = L.polyline(coordinates, { color: 'red' }).addTo(map);
+    }
+}
+
+function setGeojsonToMap(geojson) {
+
+    const feature = L.geoJSON(geojson, {
+        style: function (feature) {
+            return {
+                color: "blue",
+                weight: 2,
+            };
+        },
+        pointToLayer: (feature, latlng) => {
+            if (feature.properties.type === "circle") {
+                return new L.circle(latlng, {
+                    radius: feature.properties.radius,
+                });
+            } else if (feature.properties.type === "circlemarker") {
+                return new L.circleMarker(latlng, {
+                    radius: 10,
+                });
+            } else {
+                return new L.Marker(latlng);
+            }
+        },
+        onEachFeature: function (feature, layer) {
+            drawnItems.addLayer(layer);
+            const coordinates = feature.geometry.coordinates.toString();
+            const result = coordinates.match(/[^,]+,[^,]+/g);
+
+            layer.bindPopup(
+                "<span>Coordinates:<br>" + result.join("<br>") + "</span>"
+            );
+        },
+    }).addTo(map);
+
+    map.flyToBounds(feature.getBounds());
 }
 
 
