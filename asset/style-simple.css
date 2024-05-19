@@ -1,116 +1,8 @@
- body {
-     margin: 0;
-     font-family: Arial, sans-serif;
+#map {
+    height: 400px;
  }
 
- #container {
-     display: grid;
-     grid-template-columns: 1fr 4fr;
-     height: 100vh;
- }
 
- #sidebar {
-     width: 300px;
-     background: #f5f5f5;
-     padding: 10px;
-     border-right: 1px solid #ddd;
-     overflow-y: auto;
- }
-
- #plan-optimize {
-     margin-bottom: 20px;
- }
-
- .stats {
-     display: flex;
-     justify-content: space-between;
-     margin-bottom: 10px;
- }
-
- .stat {
-     background: #ddd;
-     padding: 5px;
-     border-radius: 5px;
- }
-
- #drivers {
-     margin-bottom: 20px;
- }
-
- .driver {
-     display: flex;
-     align-items: center;
-     margin-bottom: 5px;
- }
-
- .driver input {
-     margin-right: 10px;
- }
-
- #map {
-     height: 1000px;
- }
- #bottom-bar {
-     background: #fff;
-     border-top: 1px solid #ddd;
-     padding: 10px;
-     display: flex;
-     flex-direction: column;
-     height: 250px;
- }
-
- #tabs {
-     display: flex;
-     border-bottom: 1px solid #ddd;
- }
-
- .tab-button {
-     flex: 1;
-     padding: 10px;
-     border: none;
-     background: none;
-     cursor: pointer;
- }
-
- .tab-button.active {
-     background: #ddd;
- }
-
- #tab-content {
-     flex: 1;
-     overflow-y: auto;
- }
-
- .tab {
-     display: none;
-     padding: 10px;
- }
-
- .tab.active {
-     display: block;
- }
-
- table {
-     width: 100%;
-     border-collapse: collapse;
-     margin-top: 10px;
- }
-
- thead {
-     background: #f5f5f5;
- }
-
- th,
- td {
-     padding: 10px;
-     border: 1px solid #ddd;
-     text-align: left;
- }
-
- #sidebar-content {
-     display: flex;
-     flex-direction: column;
- }
 
  .numbered-marker-icon {
      background-color: #2a93ee;
@@ -161,4 +53,81 @@
      100% {
          box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
      }
+ }
+
+ .leaflet-popup-content-wrapper {
+     background: #f9f9f9;
+     border-radius: 5px;
+     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+ }
+
+ .leaflet-popup-content {
+    font-size: 12px;
+        color: #333;
+        margin: 12px;
+ }
+
+ .popup-header {
+     font-weight: bold;
+     margin-bottom: 5px;
+ }
+
+ .popup-row {
+     margin-bottom: 3px;
+ }
+
+ .popup-label {
+     font-weight: bold;
+ }
+
+  #drivers {
+      margin-bottom: 20px;
+  }
+
+  .driver {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 8fr;
+    margin-bottom: 5px;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .driver-info{
+    display: flex;
+    flex-direction: column;
+  }
+.driver-info-detail{
+    display: none;
+}
+.driver-lock{
+    visibility: hidden;
+}
+.driver-circle {
+    visibility: hidden;
+}
+  .driver input {
+      margin-right: 10px;
+  }
+
+  #orders{
+    display: none !important;
+  }
+#orders.show-orders {
+    display: block !important;
+}
+ .stats {
+     display: flex;
+     justify-content: space-between;
+     margin-bottom: 10px;
+ }
+.stat-box{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+ .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px;
+    border-radius: 5px;
  }

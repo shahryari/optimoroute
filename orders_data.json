@@ -1,0 +1,38 @@
+[
+    {
+        "id": 1001,
+        "priority": "Medium",
+        "location": "East Point",
+        "address": "41.698629, 44.887356",
+        "duration": "30 min",
+        "driver": "Driver 001",
+        "stopNumber": 1
+    },
+    {
+        "id": 1002,
+        "priority": "Medium",
+        "location": "Tbilisi Mall",
+        "address": "41.870564, 44.77256",
+        "duration": "45 min",
+        "driver": "Driver 001",
+        "stopNumber": 3
+    },
+    {
+        "id": 1003,
+        "priority": "Medium",
+        "location": "City Mall",
+        "address": "41.726045, 44.737074",
+        "duration": "5 min",
+        "driver": "Driver 001",
+        "stopNumber": 4
+    },
+    {
+        "id": 1004,
+        "priority": "Medium",
+        "location": "East Point",
+        "address": "41.698629, 44.887356",
+        "duration": "40 min",
+        "driver": "Driver 001",
+        "stopNumber": 2
+    }
+]
