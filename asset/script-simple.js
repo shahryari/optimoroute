@@ -1,16 +1,20 @@
 $('#dg').datagrid({
     onClickRow: function (index, row) {
-        highlightMarker(row.id);
+        highlightNumericMarker(row.id, orders, markers);
     }
 });
 $('input[type=checkbox]').change(function () {
     const customerId = $(this).attr('id');
     const isChecked = $(this).prop('checked');
+    const index = customerId.split('customer').join('');
     if (isChecked) {
         showIcons(customerId);
+        highlightMarker(customers[index].id, customers, customerMarkers)
 
     } else {
         hideIcons(customerId);
+        highlightMarker(customers[index].id, customers, customerMarkers)
+
     }
 });
 
@@ -93,18 +97,33 @@ map.addControl(
     })
 );
 
-map.on(L.Draw.Event.CREATED, function (event) {
-    let layer = event.layer;
-    let feature = (layer.feature = layer.feature || {});
-    let type = event.layerType;
-    feature.type = feature.type || "Feature";
-    let props = (feature.properties = feature.properties || {});
-    props.type = type;
-    if (type === "circle") {
-        props.radius = layer.getRadius();
-    }
-    drawnItems.addLayer(layer);
-});
+// map.on(L.Draw.Event.CREATED, function (event) {
+//     let layer = event.layer;
+//     let feature = (layer.feature = layer.feature || {});
+//     let type = event.layerType;
+//     feature.type = feature.type || "Feature";
+//     let props = (feature.properties = feature.properties || {});
+//     props.type = type;
+//     if (type === "circle") {
+//         props.radius = layer.getRadius();
+//     }
+//     if (layer instanceof L.Marker) {
+//         marker = layer;
+//     }
+
+//     if (marker && !selectedMarkers.includes(marker)) {
+//         selectedMarkers.push(marker); // Add marker to selectedMarkers array
+//         updatePolyline(); // Update the polyline
+//     }
+//     //drawnItems.addLayer(layer);
+// });
+// map.on(L.Draw.Event.DRAWVERTEX, function (event) {
+//     var marker = event.target;
+//     if (!selectedMarkers.includes(marker)) {
+//         selectedMarkers.push(marker); // Add marker to selectedMarkers array
+//         updatePolyline(); // Update the polyline
+//     }
+// });
 
 // --------------------------------------------------
 // Tab functionality
@@ -122,6 +141,7 @@ tabs.forEach((tab) => {
 
 var latlngs = [];
 var markers = {};
+var customerMarkers = {};
 var selectedMarkers = []; // Store selected markers
 var polyline = null; // Store the polyline
 // Orders data
@@ -214,7 +234,7 @@ function updatePolyline() {
             marker.setIcon(createNumberedMarker(index + 1, false));
         });
     }
-    else if (selectedMarkers.length == 1){
+    else if (selectedMarkers.length == 1) {
         selectedMarkers.forEach(function (marker, index) {
             marker.setIcon(createNumberedMarker(index + 1, false));
         });
@@ -229,7 +249,9 @@ customers.forEach((customer) => {
             `;
     var marker = L.marker(customer.address).addTo(map);
 
-    marker.bindPopup(popupContent, { closeButton: false }).on('click', onMarkerClick);
+    marker.bindPopup(popupContent, { closeButton: false })
+        //.on('click', onMarkerClick)
+        ;
 
     marker.on("mouseover", function (e) {
         this.openPopup();
@@ -238,7 +260,7 @@ customers.forEach((customer) => {
     // marker.on("mouseout", function (e) {
     //     this.closePopup();
     // });
-    //markers[customer.id] = marker; // Store marker by order ID
+    customerMarkers[customer.id] = marker; // Store marker by order ID
     // Add the coordinates to the latlngs array
     //latlngs.push(customer.address);
 });
@@ -306,19 +328,44 @@ function createNumberedMarker(number, isActive = false) {
         popupAnchor: [0, -30],
     });
 }
-function highlightMarker(orderId) {
+
+function highlightNumericMarker(id, dataCollection, markerCollection) {
+
+
     // Reset all markers to default
-    Object.values(markers).forEach((marker) => {
-        const orderId = Object.keys(markers).find(id => markers[id] === marker);
-        const order = orders.find(order => order.id == orderId);
-        marker.setIcon(createNumberedMarker(order.stopNumber));
+    Object.values(markerCollection).forEach((marker) => {
+        var itemId = Object.keys(markerCollection).find(markerId => markerCollection[markerId] === marker);
+        var item = dataCollection.find(data => data.id == itemId);
+        marker.setIcon(createNumberedMarker(item.id));
     });
 
     // Highlight the selected marker
-    const selectedOrder = orders.find(order => order.id == orderId);
-    markers[orderId].setIcon(createNumberedMarker(selectedOrder.stopNumber, true));
+    var selectedItem = dataCollection.find(data => data.id == id);
+    markerCollection[id].setIcon(createNumberedMarker(selectedItem.id, true));
+
     // Center the map on the selected marker
-    map.setView(markers[orderId].getLatLng(), zoom, {
+    map.setView(markerCollection[id].getLatLng(), map.getZoom(), {
+        animate: true,
+        pan: { duration: 1 }
+    });
+}
+function highlightMarker(id, dataCollection, markerCollection) {
+    // Highlight the selected marker
+    var selectedItem = dataCollection.find(data => data.id == id);
+    var markerElement = markerCollection[id].getElement();
+
+    // Check if the marker already has the active-marker class
+    var isActive = markerElement.classList.contains('active-marker');
+
+    // Toggle the active-marker class
+    if (isActive) {
+        markerElement.classList.remove('active-marker'); // Remove active-marker class
+    } else {
+        markerElement.classList.add('active-marker'); // Add active-marker class
+    }
+
+    // Center the map on the selected marker
+    map.setView(markerCollection[id].getLatLng(), map.getZoom(), {
         animate: true,
         pan: { duration: 1 }
     });
