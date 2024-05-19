@@ -33,7 +33,58 @@
             <div class="easyui-tabs" data-options="tools:'#tab-tools',fit:true,border:false" >
                 <div title="Plan and Optimize" > 
                     <div class="easyui-layout" data-options="fit:true,border:false" >                        
-                        <div data-options="region:'west',split:true"  style="width:300px;"></div>
+                        <div data-options="region:'west',split:true"  style="width:300px;">
+                            <div class="stats">
+                                <div class="stat"><span>4</span><sapn>Scheduled</sapn></div>
+                                <div class="stat"><span>0</span><sapn>Unscheduled</sapn></div>
+                                <div class="stat"><span>4</span><sapn>Total</sapn></div>
+                                <div class="stat"><span>1</span><sapn>Routes</sapn></div>
+                            </div>
+                              <div id="drivers">
+                                <h3>Drivers</h3>
+                                <div class="driver">
+                                    <input type="checkbox" id="driver1" />
+                                    <i class="fa-solid fa-lock driver-lock"></i>
+                                    <i class="fa-solid fa-circle driver-circle"></i>
+                                    <div class="driver-info">
+                                        <label for="driver1">Driver 001</label>
+                                        <span class="driver-info-detail">3h 25m, 4 orders, 59km</span>
+                                    </div>                                    
+                                </div>
+                                <div class="driver">
+                                    <input type="checkbox" id="driver2" />
+                                    <i class="fa-solid fa-lock driver-lock"></i>
+                                    <i class="fa-solid fa-circle driver-circle"></i>
+                                    <div class="driver-info">
+                                        <label for="driver2">Driver 002</label>
+                                    </div>                                    
+                                </div>
+                                <div class="driver">
+                                    <input type="checkbox" id="driver3"  />
+                                    <i class="fa-solid fa-lock driver-lock"></i>
+                                    <i class="fa-solid fa-circle driver-circle"></i>
+                                    <div class="driver-info">
+                                        <label for="driver3">Driver 003</label>
+                                    </div>                                    
+                                </div>
+                                <div class="driver">
+                                    <input type="checkbox" id="driver4"  />
+                                    <i class="fa-solid fa-lock driver-lock"></i>
+                                    <i class="fa-solid fa-circle driver-circle"></i>
+                                    <div class="driver-info">
+                                        <label for="driver4">Driver 004</label>
+                                    </div>                                    
+                                </div>
+                                <div class="driver">
+                                    <input type="checkbox" id="driver5"  />
+                                    <i class="fa-solid fa-lock driver-lock"></i>
+                                    <i class="fa-solid fa-circle driver-circle"></i>
+                                    <div class="driver-info">
+                                        <label for="driver4">Driver 004</label>
+                                    </div>                                    
+                                </div>
+                            </div>
+                        </div>
                         <div data-options="region:'center'">
                             <div class="easyui-layout" data-options="fit:true,border:false" >                        
                                 <div data-options="region:'center'">
@@ -48,25 +99,25 @@
                                         </div>
                                         <div data-options="region:'center'">
                                             <div class="easyui-tabs" data-options="tools:'#tab-tools',fit:true,border:false" >
-                                                <div title="Orders" style="padding:10px;">
-                                                   
-                                                </div>
-                                                <div id="orders" title="Routes" style="padding:10px;">
-                                                    <table id="dg" title="Orders" class="easyui-datagrid" style="width:700px;height:250px"
-           data-options="url:'orders_data.json',method:'get',fitColumns:true,singleSelect:true">
-        <thead>
-            <tr>
-                <th data-options="field:'id',width:100">Order ID</th>
-                <th data-options="field:'priority',width:100">Priority</th>
-                <th data-options="field:'location',width:150">Location</th>
-                <th data-options="field:'address',width:150">Address</th>
-                <th data-options="field:'duration',width:100">Duration</th>
-                <th data-options="field:'driver',width:100">Driver</th>
-                <th data-options="field:'stopNumber',width:80">Stop Number</th>
-            </tr>
-        </thead>
-    </table>
+                                                <div id="orders" title="Orders" style="padding:10px;">
+                                                    <table id="dg" title="Orders" class="easyui-datagrid" style="width:100%;height:100%"
+                                                        data-options="url:'orders_data.json',method:'get',fitColumns:true,singleSelect:true">
+                                                        <thead>
+                                                            <tr>
+                                                                <th data-options="field:'id',width:100">Order ID</th>
+                                                                <th data-options="field:'priority',width:100">Priority</th>
+                                                                <th data-options="field:'location',width:150">Location</th>
+                                                                <th data-options="field:'address',width:150">Address</th>
+                                                                <th data-options="field:'duration',width:100">Duration</th>
+                                                                <th data-options="field:'driver',width:100">Driver</th>
+                                                                <th data-options="field:'stopNumber',width:80">Stop Number</th>
+                                                            </tr>
+                                                        </thead>
+                                                    </table>
 
+                                                </div>
+                                                <div  title="Routes" style="padding:10px;">
+                                                   
                                                 </div>
                                                 <div title="Timeline" style="padding:10px;">
                                                    

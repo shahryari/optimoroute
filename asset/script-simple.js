@@ -1,3 +1,29 @@
+$('#dg').datagrid({
+    onClickRow: function (index, row) {
+        highlightMarker(row.id);
+    }
+});
+$('input[type=checkbox]').change(function () {
+    const driverId = $(this).attr('id');
+    const isChecked = $(this).prop('checked');
+    if (isChecked) {
+        showIcons(driverId);
+    } else {
+        hideIcons(driverId);
+    }
+});
+
+function showIcons(driverId) {
+    $(`#${driverId}`).siblings('.driver-lock, .driver-circle').css('visibility', 'visible');
+    $(`#${driverId}`).siblings('.driver-info').find('.driver-info-detail').css('display', 'block');
+    $("#orders").addClass("show-orders");
+}
+
+function hideIcons(driverId) {
+    $(`#${driverId}`).siblings('.driver-lock, .driver-circle').css('visibility', 'hidden');
+    $(`#${driverId}`).siblings('.driver-info').find('.driver-info-detail').css('display', 'none');
+    $("#orders").removeClass("show-orders");
+}
 // Initialize the map
 let config = {
     minZoom: 5,
@@ -160,36 +186,21 @@ $('#orderTable').datagrid({
         { field: 'stopNumber', title: 'Stop Number', width: 80 }
     ]]
 });
-$('#dg').datagrid({
-    onClickRow: function (index, row) {
-        // Handle row click event
-        console.log('Row clicked:', row);
-    }
-});
-orders.forEach((order) => {
-    // var row = document.createElement("tr");
-    // row.setAttribute("id", "order-" + order.id);
-    // row.innerHTML = `
-    //     <td>${order.id}</td>
-    //     <td>${order.priority}</td>
-    //     <td>${order.location}</td>
-    //     <td>${order.address.join(", ")}</td>
-    //     <td>${order.duration}</td>
-    //     <td>${order.driver}</td>
-    //     <td>${order.stopNumber}</td>
-    // `;
-    // orderTable.appendChild(row);
 
-    // Add marker to the map
+orders.forEach((order) => {
+    const popupContent = `
+                <div class="popup-header">Order ID: ${order.id}</div>
+                <div class="popup-row"><span class="popup-label">Location:</span> ${order.location}</div>
+                <div class="popup-row"><span class="popup-label">Driver:</span> ${order.driver}</div>
+                <div class="popup-row"><span class="popup-label">Duration:</span> ${order.duration}</div>
+                <div class="popup-row"><span class="popup-label">Priority:</span> ${order.priority}</div>
+            `;
     var marker = L.marker(order.address, {
         icon: createNumberedMarker(order.stopNumber),
-    })
-        .addTo(map)
-        .on("click", clickZoom);
+    }).addTo(map).on("click", clickZoom);
 
-    marker.bindPopup(
-        `<b>Order ID:</b> ${order.id}<br><b>Location:</b> ${order.location}<br><b>Driver:</b> ${order.driver}`
-    );
+    marker.bindPopup(popupContent, { closeButton: false });
+
     function clickZoom(e) {
         map.setView(e.target.getLatLng(), zoom);
 
@@ -199,9 +210,9 @@ orders.forEach((order) => {
         this.openPopup();
     });
 
-    marker.on("mouseout", function (e) {
-        this.closePopup();
-    });
+    // marker.on("mouseout", function (e) {
+    //     this.closePopup();
+    // });
     function setActive(markerId) {
         // Reset all markers to default
         Object.values(markers).forEach((marker) => {
@@ -240,7 +251,13 @@ function highlightMarker(orderId) {
     // Highlight the selected marker
     const selectedOrder = orders.find(order => order.id == orderId);
     markers[orderId].setIcon(createNumberedMarker(selectedOrder.stopNumber, true));
+    // Center the map on the selected marker
+    map.setView(markers[orderId].getLatLng(), zoom, {
+        animate: true,
+        pan: { duration: 1 }
+    });
 }
+
 
 // Draw polyline between markers
 L.polyline(latlngs, { color: "blue" }).addTo(map);

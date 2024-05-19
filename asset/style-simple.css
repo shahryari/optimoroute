@@ -1,5 +1,5 @@
 #map {
-     height: 1000px;
+    height: 400px;
  }
 
 
@@ -53,4 +53,81 @@
      100% {
          box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
      }
+ }
+
+ .leaflet-popup-content-wrapper {
+     background: #f9f9f9;
+     border-radius: 5px;
+     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+ }
+
+ .leaflet-popup-content {
+    font-size: 12px;
+        color: #333;
+        margin: 12px;
+ }
+
+ .popup-header {
+     font-weight: bold;
+     margin-bottom: 5px;
+ }
+
+ .popup-row {
+     margin-bottom: 3px;
+ }
+
+ .popup-label {
+     font-weight: bold;
+ }
+
+  #drivers {
+      margin-bottom: 20px;
+  }
+
+  .driver {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 8fr;
+    margin-bottom: 5px;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .driver-info{
+    display: flex;
+    flex-direction: column;
+  }
+.driver-info-detail{
+    display: none;
+}
+.driver-lock{
+    visibility: hidden;
+}
+.driver-circle {
+    visibility: hidden;
+}
+  .driver input {
+      margin-right: 10px;
+  }
+
+  #orders{
+    display: none !important;
+  }
+#orders.show-orders {
+    display: block !important;
+}
+ .stats {
+     display: flex;
+     justify-content: space-between;
+     margin-bottom: 10px;
+ }
+.stat-box{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+ .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px;
+    border-radius: 5px;
  }
