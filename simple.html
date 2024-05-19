@@ -52,18 +52,20 @@
                                                    
                                                 </div>
                                                 <div id="orders" title="Routes" style="padding:10px;">
-                                                    <table id="orderTable" class="easyui-datagrid"  data-options="singleSelect:true,collapsible:true,url:'datagrid_data1.json',method:'get',fit:true">
-                                                        <thead>
-                                                            <tr>
-                                                                <th data-options="field:'OrderID',width:80">Item ID</th>
-                                                                <th data-options="field:'Priority',width:100">Product</th>
-                                                                <th data-options="field:'listprice',width:80,align:'right'">List Price</th>
-                                                                <th data-options="field:'unitcost',width:80,align:'right'">Unit Cost</th>
-                                                                <th data-options="field:'attr1',width:250">Attribute</th>
-                                                                <th data-options="field:'status',width:60,align:'center'">Status</th>
-                                                            </tr>
-                                                        </thead>
-                                                    </table>
+                                                    <table id="dg" title="Orders" class="easyui-datagrid" style="width:700px;height:250px"
+           data-options="url:'orders_data.json',method:'get',fitColumns:true,singleSelect:true">
+        <thead>
+            <tr>
+                <th data-options="field:'id',width:100">Order ID</th>
+                <th data-options="field:'priority',width:100">Priority</th>
+                <th data-options="field:'location',width:150">Location</th>
+                <th data-options="field:'address',width:150">Address</th>
+                <th data-options="field:'duration',width:100">Duration</th>
+                <th data-options="field:'driver',width:100">Driver</th>
+                <th data-options="field:'stopNumber',width:80">Stop Number</th>
+            </tr>
+        </thead>
+    </table>
 
                                                 </div>
                                                 <div title="Timeline" style="padding:10px;">

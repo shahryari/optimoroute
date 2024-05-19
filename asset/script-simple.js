@@ -160,6 +160,12 @@ $('#orderTable').datagrid({
         { field: 'stopNumber', title: 'Stop Number', width: 80 }
     ]]
 });
+$('#dg').datagrid({
+    onClickRow: function (index, row) {
+        // Handle row click event
+        console.log('Row clicked:', row);
+    }
+});
 orders.forEach((order) => {
     // var row = document.createElement("tr");
     // row.setAttribute("id", "order-" + order.id);
