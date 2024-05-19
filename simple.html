@@ -40,50 +40,16 @@
                                 <div class="stat"><span>4</span><sapn>Total</sapn></div>
                                 <div class="stat"><span>1</span><sapn>Routes</sapn></div>
                             </div>
-                              <div id="cutomers">
-                                <h3>Customers</h3>
-                                <div class="customer">
-                                    <input type="checkbox" id="customer1" />
-                                    <i class="fa-solid fa-lock customer-lock"></i>
-                                    <i class="fa-solid fa-circle customer-circle"></i>
-                                    <div class="customer-info">
-                                        <label for="customer1">Customer 001</label>
-                                        <span class="customer-info-detail">3h 25m, 4 orders, 59km</span>
-                                    </div>                                    
-                                </div>
-                                <div class="customer">
-                                    <input type="checkbox" id="customer2" />
-                                    <i class="fa-solid fa-lock customer-lock"></i>
-                                    <i class="fa-solid fa-circle customer-circle"></i>
-                                    <div class="customer-info">
-                                        <label for="customer2">Customer 002</label>
-                                    </div>                                    
-                                </div>
-                                <div class="customer">
-                                    <input type="checkbox" id="customer3"  />
-                                    <i class="fa-solid fa-lock customer-lock"></i>
-                                    <i class="fa-solid fa-circle customer-circle"></i>
-                                    <div class="customer-info">
-                                        <label for="customer3">Customer 003</label>
-                                    </div>                                    
-                                </div>
-                                <div class="customer">
-                                    <input type="checkbox" id="customer4"  />
-                                    <i class="fa-solid fa-lock customer-lock"></i>
-                                    <i class="fa-solid fa-circle customer-circle"></i>
-                                    <div class="customer-info">
-                                        <label for="customer4">Customer 004</label>
-                                    </div>                                    
-                                </div>
-                                <div class="customer">
-                                    <input type="checkbox" id="customer5"  />
-                                    <i class="fa-solid fa-lock customer-lock"></i>
-                                    <i class="fa-solid fa-circle customer-circle"></i>
-                                    <div class="customer-info">
-                                        <label for="dcustomer5">Customer 005</label>
-                                    </div>                                    
-                                </div>
-                            </div>
+                              <table id="customersTable" class="easyui-datagrid" style="width:100%;height:90%">
+                                <thead>
+                                    <tr>
+                                        <th data-options="field:'id',sortable:true">ID</th>
+                                        <th data-options="field:'location'">Location</th>
+                                        <th data-options="field:'address'">Address</th>
+                                        <th data-options="field:'duration'">Duration</th>
+                                    </tr>
+                                </thead>
+                            </table>
                         </div>
                         <div data-options="region:'center'">
                             <div class="easyui-layout" data-options="fit:true,border:false" >                        

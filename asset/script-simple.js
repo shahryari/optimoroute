@@ -97,33 +97,33 @@ map.addControl(
     })
 );
 
-// map.on(L.Draw.Event.CREATED, function (event) {
-//     let layer = event.layer;
-//     let feature = (layer.feature = layer.feature || {});
-//     let type = event.layerType;
-//     feature.type = feature.type || "Feature";
-//     let props = (feature.properties = feature.properties || {});
-//     props.type = type;
-//     if (type === "circle") {
-//         props.radius = layer.getRadius();
-//     }
-//     if (layer instanceof L.Marker) {
-//         marker = layer;
-//     }
+map.on(L.Draw.Event.CREATED, function (event) {
+    let layer = event.layer;
+    let feature = (layer.feature = layer.feature || {});
+    let type = event.layerType;
+    feature.type = feature.type || "Feature";
+    let props = (feature.properties = feature.properties || {});
+    props.type = type;
+    if (type === "circle") {
+        props.radius = layer.getRadius();
+    }
+    // if (layer instanceof L.Marker) {
+    //     marker = layer;
+    // }
 
-//     if (marker && !selectedMarkers.includes(marker)) {
-//         selectedMarkers.push(marker); // Add marker to selectedMarkers array
-//         updatePolyline(); // Update the polyline
-//     }
-//     //drawnItems.addLayer(layer);
-// });
-// map.on(L.Draw.Event.DRAWVERTEX, function (event) {
-//     var marker = event.target;
-//     if (!selectedMarkers.includes(marker)) {
-//         selectedMarkers.push(marker); // Add marker to selectedMarkers array
-//         updatePolyline(); // Update the polyline
-//     }
-// });
+    // if (marker && !selectedMarkers.includes(marker)) {
+    //     selectedMarkers.push(marker); // Add marker to selectedMarkers array
+    //     updatePolyline(); // Update the polyline
+    // }
+    drawnItems.addLayer(layer);
+});
+map.on(L.Draw.Event.DRAWVERTEX, function (event) {
+    var marker = event.target;
+    if (!selectedMarkers.includes(marker)) {
+        selectedMarkers.push(marker); // Add marker to selectedMarkers array
+        updatePolyline(); // Update the polyline
+    }
+});
 
 // --------------------------------------------------
 // Tab functionality
@@ -190,7 +190,28 @@ var customers = [
     { id: 004, location: "Shop center", address: [41.298629, 44.887356], duration: "40 min" },
 ];
 
+// Initialize the datagrid
+$('#customersTable').datagrid({
+    columns: [[
+        { field: 'id', title: 'ID', sortable: true },
+        { field: 'location', title: 'Location' },
+        { field: 'address', title: 'Address' },
+        { field: 'duration', title: 'Duration' }
+    ]],
+    // Call this function when a row is checked
+    onCheck: function (index, row) {
+        showIcons(index);
+        highlightMarker(customers[index].id, customers, customerMarkers);
+    },
+    // Call this function when a row is unchecked
+    onUncheck: function (index, row) {
+        hideIcons(index);
+        highlightMarker(customers[index].id, customers, customerMarkers);
+    }
+});
 
+// Load data into the datagrid
+$('#customersTable').datagrid('loadData', customers);
 //var orderTable = document.getElementById("orderTable");
 // Store markers by order ID
 $('#orderTable').datagrid({
@@ -207,14 +228,29 @@ $('#orderTable').datagrid({
     ]]
 });
 
-// Function to handle marker click
+//Function to handle marker click
 function onMarkerClick(e) {
     var marker = e.target;
+    // var polylineGeoJSON = {
+    //     "type": "Feature",
+    //     "properties": {},
+    //     "geometry": {
+    //         "type": "LineString",
+    //         "coordinates": [
+    //             [marker.getLatLng().lng, marker.getLatLng().lat],
+    //             [e.latlng.lng, e.latlng.lat]
+    //         ]
+    //     }
+    // };
+
+    // // Add the GeoJSON object to the map
+    // L.geoJSON(polylineGeoJSON).addTo(map);
     if (!selectedMarkers.includes(marker)) {
         selectedMarkers.push(marker); // Add marker to selectedMarkers array
         updatePolyline(); // Update the polyline
     }
 }
+
 
 // Function to update polyline based on selected markers
 function updatePolyline() {
@@ -250,7 +286,7 @@ customers.forEach((customer) => {
     var marker = L.marker(customer.address).addTo(map);
 
     marker.bindPopup(popupContent, { closeButton: false })
-        //.on('click', onMarkerClick)
+        .on('click', onMarkerClick)
         ;
 
     marker.on("mouseover", function (e) {
@@ -328,27 +364,24 @@ function createNumberedMarker(number, isActive = false) {
         popupAnchor: [0, -30],
     });
 }
-
 function highlightNumericMarker(id, dataCollection, markerCollection) {
-
-
     // Reset all markers to default
     Object.values(markerCollection).forEach((marker) => {
-        var itemId = Object.keys(markerCollection).find(markerId => markerCollection[markerId] === marker);
-        var item = dataCollection.find(data => data.id == itemId);
-        marker.setIcon(createNumberedMarker(item.id));
+        const orderId = Object.keys(markerCollection).find(id => markerCollection[id] === marker);
+        const order = dataCollection.find(order => order.id == orderId);
+        marker.setIcon(createNumberedMarker(order.stopNumber));
     });
 
     // Highlight the selected marker
-    var selectedItem = dataCollection.find(data => data.id == id);
-    markerCollection[id].setIcon(createNumberedMarker(selectedItem.id, true));
-
+    const selectedOrder = dataCollection.find(order => order.id == id);
+    markerCollection[id].setIcon(createNumberedMarker(selectedOrder.stopNumber, true));
     // Center the map on the selected marker
-    map.setView(markerCollection[id].getLatLng(), map.getZoom(), {
+    map.setView(markerCollection[id].getLatLng(), zoom, {
         animate: true,
         pan: { duration: 1 }
     });
 }
+
 function highlightMarker(id, dataCollection, markerCollection) {
     // Highlight the selected marker
     var selectedItem = dataCollection.find(data => data.id == id);
