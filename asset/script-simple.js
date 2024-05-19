@@ -145,22 +145,34 @@ function createNumberedMarker(number, isActive = false) {
     });
 }
 
-var orderTable = document.getElementById("orderTable");
+//var orderTable = document.getElementById("orderTable");
 var markers = {}; // Store markers by order ID
-
+$('#orderTable').datagrid({
+    url: 'datagrid_data1.json',
+    method: 'get',
+    columns: [[
+        { field: 'orderId', title: 'Order ID', width: 100 },
+        { field: 'priority', title: 'Priority', width: 100 },
+        { field: 'location', title: 'Location', width: 150 },
+        { field: 'address', title: 'Address', width: 150 },
+        { field: 'duration', title: 'Duration', width: 100 },
+        { field: 'driver', title: 'Driver', width: 100 },
+        { field: 'stopNumber', title: 'Stop Number', width: 80 }
+    ]]
+});
 orders.forEach((order) => {
-    var row = document.createElement("tr");
-    row.setAttribute("id", "order-" + order.id);
-    row.innerHTML = `
-        <td>${order.id}</td>
-        <td>${order.priority}</td>
-        <td>${order.location}</td>
-        <td>${order.address.join(", ")}</td>
-        <td>${order.duration}</td>
-        <td>${order.driver}</td>
-        <td>${order.stopNumber}</td>
-    `;
-    orderTable.appendChild(row);
+    // var row = document.createElement("tr");
+    // row.setAttribute("id", "order-" + order.id);
+    // row.innerHTML = `
+    //     <td>${order.id}</td>
+    //     <td>${order.priority}</td>
+    //     <td>${order.location}</td>
+    //     <td>${order.address.join(", ")}</td>
+    //     <td>${order.duration}</td>
+    //     <td>${order.driver}</td>
+    //     <td>${order.stopNumber}</td>
+    // `;
+    // orderTable.appendChild(row);
 
     // Add marker to the map
     var marker = L.marker(order.address, {
@@ -175,7 +187,7 @@ orders.forEach((order) => {
     function clickZoom(e) {
         map.setView(e.target.getLatLng(), zoom);
 
-        setActive(e.target._leaflet_id);
+        //setActive(e.target._leaflet_id);
     }
     marker.on("mouseover", function (e) {
         this.openPopup();
@@ -184,15 +196,28 @@ orders.forEach((order) => {
     marker.on("mouseout", function (e) {
         this.closePopup();
     });
+    function setActive(markerId) {
+        // Reset all markers to default
+        Object.values(markers).forEach((marker) => {
+            const orderId = Object.keys(markers).find(id => markers[id] === marker);
+            const order = orders.find(order => order.id == orderId);
+            marker.setIcon(createNumberedMarker(order.stopNumber));
+        });
+
+        // Highlight the selected marker
+        const selectedOrder = orders.find(order => order.id == markerId);
+        markers[markerId].setIcon(createNumberedMarker(selectedOrder.stopNumber, true));
+    }
 
     markers[order.id] = marker; // Store marker by order ID
 
-    row.addEventListener("click", function () {
-        // Highlight selected marker
-        highlightMarker(order.id);
-        // Pan map to the marker
-        map.setView(order.address, zoom);
-    });
+    // row.addEventListener("click", function () {
+    //     // Highlight selected marker
+    //     highlightMarker(order.id);
+    //     // Pan map to the marker
+    //     map.setView(order.address, zoom);
+
+    // });
 
     // Add the coordinates to the latlngs array
     latlngs.push(order.address);
