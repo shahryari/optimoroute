@@ -1,4 +1,4 @@
-$('#dg').datagrid({
+$('#orders').datagrid({
     onClickRow: function (index, row) {
         highlightNumericMarker(row.id, orders, markers);
     }
@@ -107,23 +107,72 @@ map.on(L.Draw.Event.CREATED, function (event) {
     if (type === "circle") {
         props.radius = layer.getRadius();
     }
-    // if (layer instanceof L.Marker) {
-    //     marker = layer;
-    // }
-
-    // if (marker && !selectedMarkers.includes(marker)) {
-    //     selectedMarkers.push(marker); // Add marker to selectedMarkers array
-    //     updatePolyline(); // Update the polyline
-    // }
     drawnItems.addLayer(layer);
 });
-map.on(L.Draw.Event.DRAWVERTEX, function (event) {
-    var marker = event.target;
-    if (!selectedMarkers.includes(marker)) {
-        selectedMarkers.push(marker); // Add marker to selectedMarkers array
-        updatePolyline(); // Update the polyline
-    }
+map.on(L.Draw.Event.EDITVERTEX, function (event) {
+    console.log("EDITVERTEX", event)
 });
+map.on(L.Draw.Event.EDITRESIZE, function (event) {
+    console.log("EDITRESIZE", event)
+});
+map.on(L.Draw.Event.EDITMOVE, function (event) {
+    console.log("EDITMOVE", event)
+});
+map.on(L.Draw.Event.DELETED, function (event) {
+    event.layers.eachLayer(function (layer) {
+        if (layer instanceof L.Polyline) {
+
+
+            selectedMarkers = selectedMarkers.filter(marker => {
+                // let isInPolyline = route.some(coord =>
+                //     coord[0] === marker.getLatLng().lng && coord[1] === marker.getLatLng().lat
+                // );
+                let isInPolyline = route.some(subArray =>
+                    subArray[0] === marker.getLatLng().lng && subArray[1] === marker.getLatLng().lat);
+
+                var searchTerm = [marker.getLatLng().lng, marker.getLatLng().lat];
+                for (var i = 0; i < route.length; i++) {
+                    for (var j = 0; j < route[i].length; j++) {
+                        if (route[i][j][0] === searchTerm[0] && route[i][j][1] === searchTerm[1]) {
+                            isInPolyline = true;
+                            break;
+                        }
+                    }
+                    if (isInPolyline) {
+                        break;
+                    }
+                }
+
+                if (!isInPolyline) {
+                    marker.setIcon(L.marker(marker.getLatLng()).options.icon);
+
+                    return false;
+                }
+
+                return true;
+            });
+            // geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.find(coord =>
+            //     coord[0] === marker.getLatLng().lng && coord[1] === marker.getLatLng().lat
+            // );
+            selectedMarkers.forEach((marker, index) => {
+                marker.setIcon(createNumberedMarker(index + 1));
+            });
+            geoJson.features[0].geometry.coordinates = route[route.length - 1];
+            // Redraw the remaining polyline
+            //drawPolylineFromGeoJSON(geoJson);
+        }
+    });
+});
+map.on(L.Draw.Event.DELETESTART, function (event) {
+    console.log("DELETESTART", event)
+});
+map.on(L.Draw.Event.DELETESTOP, function (event) {
+    console.log("DELETESTOP", event)
+});
+map.on(L.Draw.Event.EDITSTART, function (event) {
+    console.log("EDITSTART", event)
+});
+
 
 // --------------------------------------------------
 // Tab functionality
@@ -144,6 +193,7 @@ var markers = {};
 var customerMarkers = {};
 var selectedMarkers = []; // Store selected markers
 var polyline = null; // Store the polyline
+var route = [];
 var geoJson = {
     "type": "FeatureCollection",
     "features": [
@@ -252,6 +302,9 @@ function onMarkerClick(e) {
     if (selectedMarkers.includes(marker)) {
         // Remove marker from selectedMarkers array
         selectedMarkers = selectedMarkers.filter(selectedMarker => selectedMarker !== marker);
+        geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.filter(coord =>
+            coord[0] !== marker.getLatLng().lng || coord[1] !== marker.getLatLng().lat
+        );
     } else {
         // Add marker to selectedMarkers array
         selectedMarkers.push(marker);
@@ -260,8 +313,11 @@ function onMarkerClick(e) {
             [e.latlng.lng, e.latlng.lat]
         ];
 
-        // Push the new coordinates into the existing coordinates array
-        geoJson.features[0].geometry.coordinates.push(...newCoordinates);
+        if (geoJson.features[0].geometry.coordinates.length >= 2) {
+            geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.slice(-1)
+
+        }
+        geoJson.features[0].geometry.coordinates.push(...newCoordinates)
     }
     //setGeojsonToMap(geoJson);
     //updatePolyline(); // Update the polyline
@@ -270,11 +326,82 @@ function onMarkerClick(e) {
 
 
 function drawPolylineFromGeoJSON(geojson) {
+    if (selectedMarkers.length >= 2) {
+        if (polyline != null) {
+            if (map.hasLayer(polyline))
+                map.removeLayer(polyline);
+        }
+        const feature = L.geoJSON(geojson, {
+            style: function (feature) {
+                return {
+                    color: "#3388ff",
+                    weight: 4,
+                    opacity: 0.5
+                };
+            },
+            pointToLayer: (feature, latlng) => {
+                if (feature.properties.type === "circle") {
+                    return new L.circle(latlng, {
+                        radius: feature.properties.radius,
+                    });
+                } else if (feature.properties.type === "circlemarker") {
+                    return new L.circleMarker(latlng, {
+                        radius: 10,
+                    });
+                } else {
+                    return new L.Marker(latlng);
+                }
+            },
+            onEachFeature: function (feature, layer) {
+                drawnItems.addLayer(layer);
+                const coordinates = feature.geometry.coordinates.toString();
+                route.push(feature.geometry.coordinates);
+                const result = coordinates.match(/[^,]+,[^,]+/g);
+                layer.bindPopup(
+                    "<span>Coordinates:<br>" + result.join("<br>") + "</span>"
+                );
+                layer.on('remove', function (e) {
+                    if (isBetweenPoints(e.target.getLatLngs().map(coord => `${coord.lng},${coord.lat}`), route.map(coord => coord.map(m => m.toString()).toString()))) {
+                        const indexToRemove = route.map(coord => coord.map(m => m.toString()).toString()).indexOf(e.target.getLatLngs().map(coord => `${coord.lng},${coord.lat}`).toString());
+                        if (indexToRemove !== -1) {
+                            route.splice(indexToRemove, 1);
+                        }
+                    }
+                    else{
+                        
+                    }
+
+                });
+            },
+        }).addTo(map);
+
+        //map.flyToBounds(feature.getBounds());
+
+        // Create polyline from GeoJSON coordinates
+        if (geojson.features[0].geometry.type === "LineString") {
+            const coordinates = geojson.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+            //polyline = L.polyline(coordinates, { color: 'red' }).addTo(map);
+
+        }
+        selectedMarkers.forEach(function (marker, index) {
+            marker.setIcon(createNumberedMarker(index + 1, false));
+        });
+    }
+    else if (selectedMarkers.length == 1) {
+        selectedMarkers.forEach(function (marker, index) {
+            marker.setIcon(createNumberedMarker(index + 1, false));
+        });
+    }
+}
+var geoJSONList = []
+function setGeojsonToMap(geojson) {
+
     const feature = L.geoJSON(geojson, {
         style: function (feature) {
             return {
-                color: "blue",
-                weight: 2,
+                color: "#3388ff",
+                weight: 4,
+                opacity: 0.5
             };
         },
         pointToLayer: (feature, latlng) => {
@@ -294,7 +421,7 @@ function drawPolylineFromGeoJSON(geojson) {
             drawnItems.addLayer(layer);
             const coordinates = feature.geometry.coordinates.toString();
             const result = coordinates.match(/[^,]+,[^,]+/g);
-
+            geoJSONList.push(coordinates);
             layer.bindPopup(
                 "<span>Coordinates:<br>" + result.join("<br>") + "</span>"
             );
@@ -302,50 +429,13 @@ function drawPolylineFromGeoJSON(geojson) {
     }).addTo(map);
 
     //map.flyToBounds(feature.getBounds());
-
-    // Create polyline from GeoJSON coordinates
-    if (geojson.features[0].geometry.type === "LineString") {
-        const coordinates = geojson.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
-        //polyline = L.polyline(coordinates, { color: 'red' }).addTo(map);
-    }
 }
 
-function setGeojsonToMap(geojson) {
+function isBetweenPoints(point, line) {
 
-    const feature = L.geoJSON(geojson, {
-        style: function (feature) {
-            return {
-                color: "blue",
-                weight: 2,
-            };
-        },
-        pointToLayer: (feature, latlng) => {
-            if (feature.properties.type === "circle") {
-                return new L.circle(latlng, {
-                    radius: feature.properties.radius,
-                });
-            } else if (feature.properties.type === "circlemarker") {
-                return new L.circleMarker(latlng, {
-                    radius: 10,
-                });
-            } else {
-                return new L.Marker(latlng);
-            }
-        },
-        onEachFeature: function (feature, layer) {
-            drawnItems.addLayer(layer);
-            const coordinates = feature.geometry.coordinates.toString();
-            const result = coordinates.match(/[^,]+,[^,]+/g);
-
-            layer.bindPopup(
-                "<span>Coordinates:<br>" + result.join("<br>") + "</span>"
-            );
-        },
-    }).addTo(map);
-
-    map.flyToBounds(feature.getBounds());
+    return line[0] == point
+        || line[line.length - 1] == point;
 }
-
 
 // Function to update polyline based on selected markers
 function updatePolyline() {
