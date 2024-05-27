@@ -1,16 +1,20 @@
-$('#dg').datagrid({
+$('#orders').datagrid({
     onClickRow: function (index, row) {
-        highlightMarker(row.id);
+        highlightNumericMarker(row.id, orders, markers);
     }
 });
 $('input[type=checkbox]').change(function () {
     const customerId = $(this).attr('id');
     const isChecked = $(this).prop('checked');
+    const index = customerId.split('customer').join('');
     if (isChecked) {
         showIcons(customerId);
+        highlightMarker(customers[index].id, customers, customerMarkers)
 
     } else {
         hideIcons(customerId);
+        highlightMarker(customers[index].id, customers, customerMarkers)
+
     }
 });
 
@@ -105,6 +109,70 @@ map.on(L.Draw.Event.CREATED, function (event) {
     }
     drawnItems.addLayer(layer);
 });
+map.on(L.Draw.Event.EDITVERTEX, function (event) {
+    console.log("EDITVERTEX", event)
+});
+map.on(L.Draw.Event.EDITRESIZE, function (event) {
+    console.log("EDITRESIZE", event)
+});
+map.on(L.Draw.Event.EDITMOVE, function (event) {
+    console.log("EDITMOVE", event)
+});
+map.on(L.Draw.Event.DELETED, function (event) {
+    event.layers.eachLayer(function (layer) {
+        if (layer instanceof L.Polyline) {
+
+
+            selectedMarkers = selectedMarkers.filter(marker => {
+                // let isInPolyline = route.some(coord =>
+                //     coord[0] === marker.getLatLng().lng && coord[1] === marker.getLatLng().lat
+                // );
+                let isInPolyline = route.some(subArray =>
+                    subArray[0] === marker.getLatLng().lng && subArray[1] === marker.getLatLng().lat);
+
+                var searchTerm = [marker.getLatLng().lng, marker.getLatLng().lat];
+                for (var i = 0; i < route.length; i++) {
+                    for (var j = 0; j < route[i].length; j++) {
+                        if (route[i][j][0] === searchTerm[0] && route[i][j][1] === searchTerm[1]) {
+                            isInPolyline = true;
+                            break;
+                        }
+                    }
+                    if (isInPolyline) {
+                        break;
+                    }
+                }
+
+                if (!isInPolyline) {
+                    marker.setIcon(L.marker(marker.getLatLng()).options.icon);
+
+                    return false;
+                }
+
+                return true;
+            });
+            // geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.find(coord =>
+            //     coord[0] === marker.getLatLng().lng && coord[1] === marker.getLatLng().lat
+            // );
+            selectedMarkers.forEach((marker, index) => {
+                marker.setIcon(createNumberedMarker(index + 1));
+            });
+            geoJson.features[0].geometry.coordinates = route[route.length - 1];
+            // Redraw the remaining polyline
+            //drawPolylineFromGeoJSON(geoJson);
+        }
+    });
+});
+map.on(L.Draw.Event.DELETESTART, function (event) {
+    console.log("DELETESTART", event)
+});
+map.on(L.Draw.Event.DELETESTOP, function (event) {
+    console.log("DELETESTOP", event)
+});
+map.on(L.Draw.Event.EDITSTART, function (event) {
+    console.log("EDITSTART", event)
+});
+
 
 // --------------------------------------------------
 // Tab functionality
@@ -122,8 +190,26 @@ tabs.forEach((tab) => {
 
 var latlngs = [];
 var markers = {};
+var customerMarkers = {};
 var selectedMarkers = []; // Store selected markers
 var polyline = null; // Store the polyline
+var route = [];
+var geoJson = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "type": "polyline"
+            },
+            "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                ]
+            }
+        }
+    ]
+};
 // Orders data
 var orders = [
     {
@@ -170,7 +256,28 @@ var customers = [
     { id: 004, location: "Shop center", address: [41.298629, 44.887356], duration: "40 min" },
 ];
 
+// Initialize the datagrid
+$('#customersTable').datagrid({
+    columns: [[
+        { field: 'id', title: 'ID', sortable: true },
+        { field: 'location', title: 'Location' },
+        { field: 'address', title: 'Address' },
+        { field: 'duration', title: 'Duration' }
+    ]],
+    // Call this function when a row is checked
+    onCheck: function (index, row) {
+        showIcons(index);
+        highlightMarker(customers[index].id, customers, customerMarkers);
+    },
+    // Call this function when a row is unchecked
+    onUncheck: function (index, row) {
+        hideIcons(index);
+        highlightMarker(customers[index].id, customers, customerMarkers);
+    }
+});
 
+// Load data into the datagrid
+$('#customersTable').datagrid('loadData', customers);
 //var orderTable = document.getElementById("orderTable");
 // Store markers by order ID
 $('#orderTable').datagrid({
@@ -187,13 +294,147 @@ $('#orderTable').datagrid({
     ]]
 });
 
-// Function to handle marker click
+//Function to handle marker click
 function onMarkerClick(e) {
     var marker = e.target;
-    if (!selectedMarkers.includes(marker)) {
-        selectedMarkers.push(marker); // Add marker to selectedMarkers array
-        updatePolyline(); // Update the polyline
+
+    // Toggle marker selection state
+    if (selectedMarkers.includes(marker)) {
+        // Remove marker from selectedMarkers array
+        selectedMarkers = selectedMarkers.filter(selectedMarker => selectedMarker !== marker);
+        geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.filter(coord =>
+            coord[0] !== marker.getLatLng().lng || coord[1] !== marker.getLatLng().lat
+        );
+    } else {
+        // Add marker to selectedMarkers array
+        selectedMarkers.push(marker);
+        // Coordinates to add
+        var newCoordinates = [
+            [e.latlng.lng, e.latlng.lat]
+        ];
+
+        if (geoJson.features[0].geometry.coordinates.length >= 2) {
+            geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.slice(-1)
+
+        }
+        geoJson.features[0].geometry.coordinates.push(...newCoordinates)
     }
+    //setGeojsonToMap(geoJson);
+    //updatePolyline(); // Update the polyline
+    drawPolylineFromGeoJSON(geoJson);
+}
+
+
+function drawPolylineFromGeoJSON(geojson) {
+    if (selectedMarkers.length >= 2) {
+        if (polyline != null) {
+            if (map.hasLayer(polyline))
+                map.removeLayer(polyline);
+        }
+        const feature = L.geoJSON(geojson, {
+            style: function (feature) {
+                return {
+                    color: "#3388ff",
+                    weight: 4,
+                    opacity: 0.5
+                };
+            },
+            pointToLayer: (feature, latlng) => {
+                if (feature.properties.type === "circle") {
+                    return new L.circle(latlng, {
+                        radius: feature.properties.radius,
+                    });
+                } else if (feature.properties.type === "circlemarker") {
+                    return new L.circleMarker(latlng, {
+                        radius: 10,
+                    });
+                } else {
+                    return new L.Marker(latlng);
+                }
+            },
+            onEachFeature: function (feature, layer) {
+                drawnItems.addLayer(layer);
+                const coordinates = feature.geometry.coordinates.toString();
+                route.push(feature.geometry.coordinates);
+                const result = coordinates.match(/[^,]+,[^,]+/g);
+                layer.bindPopup(
+                    "<span>Coordinates:<br>" + result.join("<br>") + "</span>"
+                );
+                layer.on('remove', function (e) {
+                    if (isBetweenPoints(e.target.getLatLngs().map(coord => `${coord.lng},${coord.lat}`), route.map(coord => coord.map(m => m.toString()).toString()))) {
+                        const indexToRemove = route.map(coord => coord.map(m => m.toString()).toString()).indexOf(e.target.getLatLngs().map(coord => `${coord.lng},${coord.lat}`).toString());
+                        if (indexToRemove !== -1) {
+                            route.splice(indexToRemove, 1);
+                        }
+                    }
+                    else{
+                        
+                    }
+
+                });
+            },
+        }).addTo(map);
+
+        //map.flyToBounds(feature.getBounds());
+
+        // Create polyline from GeoJSON coordinates
+        if (geojson.features[0].geometry.type === "LineString") {
+            const coordinates = geojson.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+            //polyline = L.polyline(coordinates, { color: 'red' }).addTo(map);
+
+        }
+        selectedMarkers.forEach(function (marker, index) {
+            marker.setIcon(createNumberedMarker(index + 1, false));
+        });
+    }
+    else if (selectedMarkers.length == 1) {
+        selectedMarkers.forEach(function (marker, index) {
+            marker.setIcon(createNumberedMarker(index + 1, false));
+        });
+    }
+}
+var geoJSONList = []
+function setGeojsonToMap(geojson) {
+
+    const feature = L.geoJSON(geojson, {
+        style: function (feature) {
+            return {
+                color: "#3388ff",
+                weight: 4,
+                opacity: 0.5
+            };
+        },
+        pointToLayer: (feature, latlng) => {
+            if (feature.properties.type === "circle") {
+                return new L.circle(latlng, {
+                    radius: feature.properties.radius,
+                });
+            } else if (feature.properties.type === "circlemarker") {
+                return new L.circleMarker(latlng, {
+                    radius: 10,
+                });
+            } else {
+                return new L.Marker(latlng);
+            }
+        },
+        onEachFeature: function (feature, layer) {
+            drawnItems.addLayer(layer);
+            const coordinates = feature.geometry.coordinates.toString();
+            const result = coordinates.match(/[^,]+,[^,]+/g);
+            geoJSONList.push(coordinates);
+            layer.bindPopup(
+                "<span>Coordinates:<br>" + result.join("<br>") + "</span>"
+            );
+        },
+    }).addTo(map);
+
+    //map.flyToBounds(feature.getBounds());
+}
+
+function isBetweenPoints(point, line) {
+
+    return line[0] == point
+        || line[line.length - 1] == point;
 }
 
 // Function to update polyline based on selected markers
@@ -214,7 +455,7 @@ function updatePolyline() {
             marker.setIcon(createNumberedMarker(index + 1, false));
         });
     }
-    else if (selectedMarkers.length == 1){
+    else if (selectedMarkers.length == 1) {
         selectedMarkers.forEach(function (marker, index) {
             marker.setIcon(createNumberedMarker(index + 1, false));
         });
@@ -229,7 +470,9 @@ customers.forEach((customer) => {
             `;
     var marker = L.marker(customer.address).addTo(map);
 
-    marker.bindPopup(popupContent, { closeButton: false }).on('click', onMarkerClick);
+    marker.bindPopup(popupContent, { closeButton: false })
+        .on('click', onMarkerClick)
+        ;
 
     marker.on("mouseover", function (e) {
         this.openPopup();
@@ -238,7 +481,7 @@ customers.forEach((customer) => {
     // marker.on("mouseout", function (e) {
     //     this.closePopup();
     // });
-    //markers[customer.id] = marker; // Store marker by order ID
+    customerMarkers[customer.id] = marker; // Store marker by order ID
     // Add the coordinates to the latlngs array
     //latlngs.push(customer.address);
 });
@@ -306,19 +549,41 @@ function createNumberedMarker(number, isActive = false) {
         popupAnchor: [0, -30],
     });
 }
-function highlightMarker(orderId) {
+function highlightNumericMarker(id, dataCollection, markerCollection) {
     // Reset all markers to default
-    Object.values(markers).forEach((marker) => {
-        const orderId = Object.keys(markers).find(id => markers[id] === marker);
-        const order = orders.find(order => order.id == orderId);
+    Object.values(markerCollection).forEach((marker) => {
+        const orderId = Object.keys(markerCollection).find(id => markerCollection[id] === marker);
+        const order = dataCollection.find(order => order.id == orderId);
         marker.setIcon(createNumberedMarker(order.stopNumber));
     });
 
     // Highlight the selected marker
-    const selectedOrder = orders.find(order => order.id == orderId);
-    markers[orderId].setIcon(createNumberedMarker(selectedOrder.stopNumber, true));
+    const selectedOrder = dataCollection.find(order => order.id == id);
+    markerCollection[id].setIcon(createNumberedMarker(selectedOrder.stopNumber, true));
     // Center the map on the selected marker
-    map.setView(markers[orderId].getLatLng(), zoom, {
+    map.setView(markerCollection[id].getLatLng(), zoom, {
+        animate: true,
+        pan: { duration: 1 }
+    });
+}
+
+function highlightMarker(id, dataCollection, markerCollection) {
+    // Highlight the selected marker
+    var selectedItem = dataCollection.find(data => data.id == id);
+    var markerElement = markerCollection[id].getElement();
+
+    // Check if the marker already has the active-marker class
+    var isActive = markerElement.classList.contains('active-marker');
+
+    // Toggle the active-marker class
+    if (isActive) {
+        markerElement.classList.remove('active-marker'); // Remove active-marker class
+    } else {
+        markerElement.classList.add('active-marker'); // Add active-marker class
+    }
+
+    // Center the map on the selected marker
+    map.setView(markerCollection[id].getLatLng(), map.getZoom(), {
         animate: true,
         pan: { duration: 1 }
     });
