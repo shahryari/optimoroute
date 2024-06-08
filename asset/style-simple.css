@@ -27,14 +27,38 @@
     top: -18px;
     left: 1px;
     z-index: 606 !important;
+    position: relative;
  }
+.icon-p{
+    position: absolute;
+        left: 0;
+        top: 5px;
+}
+.icon-active{
+    left: -3px;
+    top: 1px;
+    font-size: 46px;
+    animation: b-pulse 1.5s infinite;
+}
+ @keyframes b-pulse {
+     0% {
+         color: rgba(255, 0, 0, 0.4);
+     }
 
+     70% {
+         color: rgba(255, 0, 0, 0);
+     }
+
+     100% {
+        color: rgba(255, 0, 0, 0);
+     }
+ }
  .icon-number {
     position: absolute;
     left: 10px;
     color: white;
-    font-size: 15px;
-    top: 12px;
+    font-size: 13px;
+    top: 11px;
  }
 
  .content-icon {

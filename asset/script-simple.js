@@ -9,11 +9,11 @@ $('input[type=checkbox]').change(function () {
     const index = customerId.split('customer').join('');
     if (isChecked) {
         showIcons(customerId);
-        highlightMarker(customers[index].id, customers, customerMarkers)
+        highlightMarker(customerMarkers[parseInt(index)])
 
     } else {
         hideIcons(customerId);
-        highlightMarker(customers[index].id, customers, customerMarkers)
+        highlightMarker(customerMarkers[parseInt(index)])
 
     }
 });
@@ -35,7 +35,11 @@ saveButton.on('click', function () {
     routes.forEach((r, index) => {
         //addRouteToMap(r);
         const flattenedArray = flattenAndSwapCoordinates(r);
+        const layers = new L.LayerGroup().addTo(map);
+
         addRoutingControl(flattenedArray);
+        const polylineToRemove = polylines; // Assume polyline is the one you want to remove
+        removePolyline(polylineToRemove);
     });
     finishRoute();
 });
@@ -107,14 +111,13 @@ map.on(L.Draw.Event.CREATED, function (event) {
     markers.eachLayer(function (marker) {
         var markerLatLng = marker.getLatLng();
 
-        // Check if marker is a waypoint for any routing control
         var isWaypoint = routingControls.some(control =>
             control.getWaypoints().some(wp => wp.latLng && wp.latLng.lat === markerLatLng.lat && wp.latLng.lng === markerLatLng.lng)
         );
         if (layer.getBounds().contains(markerLatLng)) {
             createNumberedMarker(1, false);
         }
-        // Only check markers that are not waypoints
+
         if (!isWaypoint) {
             if (layer.getBounds().contains(markerLatLng)) {
                 createNumberedMarker(1, true);
@@ -129,8 +132,7 @@ map.on(L.Draw.Event.CREATED, function (event) {
             }
         }
     });
-    let i = 0;
-    // Update waypoints for all routing controls
+  
     routingControls.forEach((control, index) => {
         var waypoints = control.getWaypoints();
         var newWaypoints = waypoints.filter(function (waypoint) {
@@ -169,8 +171,7 @@ map.on(L.Draw.Event.DELETED, function (event) {
             routes.forEach((r, index) => {
                 var markerIndex = 0
                 const selectedMarkersForRoute = selectedMarkers.filter((marker, i) => {
-                    // Filter markers that belong to the current route
-                    // You may need to adjust this condition based on your marker data
+
                     const markerLatLng = marker.getLatLng();
                     const t = isInRouteFunc(markerLatLng, r);
                     return t;
@@ -210,6 +211,7 @@ function finishRoute() {
 // --------------------------------------------------
 // Function to add a routing control
 function addRoutingControl(waypoints) {
+
     var control = L.Routing.control({
         waypoints: waypoints,
         show: false,
@@ -279,6 +281,8 @@ let customerMarkers = {};
 let selectedMarkers = []; // Store selected markers
 let polyline = null; // Store the polyline
 let route = [];
+let polylines = [];
+let drownRoutes = []
 var routingControls = [];
 var geoJson = {
     "type": "FeatureCollection",
@@ -353,12 +357,12 @@ $('#customersTable').datagrid({
 
     onCheck: function (index, row) {
         showIcons(index);
-        highlightMarker(customers[index].id, customers, customerMarkers);
+        highlightMarker(customerMarkers[index + 1]);
     },
 
     onUncheck: function (index, row) {
         hideIcons(index);
-        highlightMarker(customers[index].id, customers, customerMarkers);
+        highlightMarker(customerMarkers[index + 1]);
     }
 });
 
@@ -438,6 +442,7 @@ function drawPolylineFromGeoJSON(geojson) {
                 drawnItems.addLayer(layer);
                 const coordinates = feature.geometry.coordinates.toString();
                 route.push(feature.geometry.coordinates);
+                drownRoutes.push(feature.geometry.coordinates);
                 const result = coordinates.match(/[^,]+,[^,]+/g);
                 layer.bindPopup(
                     "<span>Coordinates:<br>" + result.join("<br>") + "</span>"
@@ -458,7 +463,7 @@ function drawPolylineFromGeoJSON(geojson) {
         }).addTo(map);
 
         //map.flyToBounds(feature.getBounds());
-
+        polylines.push(feature);
         // Create polyline from GeoJSON coordinates
         if (geojson.features[0].geometry.type === "LineString") {
             const coordinates = geojson.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
@@ -475,6 +480,28 @@ function drawPolylineFromGeoJSON(geojson) {
         });
     }
     console.log(route)
+}
+function removePolyline(polylines) {
+    polylines.forEach(function (polyline, index) {
+        if (polyline != null && map.hasLayer(polyline)) {
+            map.removeLayer(polyline);
+
+            // const latlngs = polyline.getLatLngs();
+            // const indexToRemove = route.findIndex(coords => {
+            //     return coords.every((coord, i) => {
+            //         return coord[0] === latlngs[i].lng && coord[1] === latlngs[i].lat;
+            //     });
+            // });
+
+            // if (indexToRemove !== -1) {
+            //     route.splice(indexToRemove, 1);
+            //     polylineRoutes.splice(indexToRemove, 1);
+            // }
+
+            polylines = [];
+        }
+    });
+
 }
 // function drawRoutingFromSelectedMarkers(waypoints) {
 //     // Ensure there are at least two selected markers for routing
@@ -645,8 +672,8 @@ orders.forEach((order) => {
 // Add a custom icon for numbered markers
 function createNumberedMarker(number, isActive = false) {
     return L.divIcon({
-        className: isActive ? "custom-icon active-marker" : "custom-icon",
-        html: `<div class='content-icon'><i class='fa-solid fa-location-pin'></i><span class='icon-number'>${number}</span></div>`,
+        className: "custom-icon",
+        html: `<div class='content-icon'><i class='fa-solid fa-location-pin icon-p ${isActive ? 'icon-active' : ''}'></i><i class='fa-solid fa-location-pin icon-p '><span class='icon-number'>${number}</span></i></div>`,
         iconSize: [30, 30],
         iconAnchor: [15, 30],
         popupAnchor: [0, -30],
@@ -670,10 +697,8 @@ function highlightNumericMarker(id, dataCollection, markerCollection) {
     });
 }
 
-function highlightMarker(id, dataCollection, markerCollection) {
-    // Highlight the selected marker
-    var selectedItem = dataCollection.find(data => data.id == id);
-    var markerElement = markerCollection[id].getElement();
+function highlightMarker(markerCollection) {
+    var markerElement = markerCollection.getElement();
 
     // Check if the marker already has the active-marker class
     var isActive = markerElement.classList.contains('active-marker');
@@ -686,7 +711,7 @@ function highlightMarker(id, dataCollection, markerCollection) {
     }
 
     // Center the map on the selected marker
-    map.setView(markerCollection[id].getLatLng(), map.getZoom(), {
+    map.setView(markerCollection.getLatLng(), map.getZoom(), {
         animate: true,
         pan: { duration: 1 }
     });
