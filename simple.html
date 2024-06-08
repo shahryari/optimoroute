@@ -3,23 +3,45 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Basic Layout - jQuery EasyUI Demo</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.2/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.0/leaflet.draw.css" />
-    <link href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css" rel="stylesheet" />
-    <script src="https://unpkg.com/leaflet@1.9.2/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.0/leaflet.draw.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.2/dist/notiflix-notify-aio-3.2.2.min.js"></script>
-    <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
+<!-- Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.2/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.2/dist/leaflet.js"></script>
 
-	<link rel="stylesheet" type="text/css" href="/asset/jquery-easyui-1.10.19/themes/material-teal/easyui.css">
-	<link rel="stylesheet" type="text/css" href="/asset/jquery-easyui-1.10.19/themes/icon.css">
-    <link type="css" rel="stylesheet" href="/asset/jquery-easyui-1.10.19/demo.css" crossorigin="anonymous">
-	<script type="text/javascript" src="/asset/jquery-easyui-1.10.19/jquery.min.js"></script>
-	<script type="text/javascript" src="/asset/jquery-easyui-1.10.19/jquery.easyui.min.js"></script>
-    <script type="text/javascript" src="/asset/jquery-easyui-1.10.19/src/jquery.tabs.js"></script>
-    <link href="/asset/fontawesome6/css/fontawesome.css" rel="stylesheet" />
-    <link href="/asset/fontawesome6/css/brands.css" rel="stylesheet" />
-    <link href="/asset/fontawesome6/css/solid.css" rel="stylesheet" />
+<!-- Leaflet Routing Machine CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+<!-- Leaflet Draw CSS and JS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.0/leaflet.draw.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.0/leaflet.draw.js"></script>
+
+<!-- Leaflet Fullscreen CSS and JS -->
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/leaflet.fullscreen.css" />
+<script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-fullscreen/v1.0.1/Leaflet.fullscreen.min.js"></script>
+
+<!-- Notiflix JS -->
+<script src="https://cdn.jsdelivr.net/npm/notiflix@3.2.2/dist/notiflix-notify-aio-3.2.2.min.js"></script>
+
+<!-- Leaflet Control Geocoder CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<!-- EasyUI CSS -->
+<link rel="stylesheet" type="text/css" href="/asset/jquery-easyui-1.10.19/themes/material-teal/easyui.css">
+<link rel="stylesheet" type="text/css" href="/asset/jquery-easyui-1.10.19/themes/icon.css">
+<link type="css" rel="stylesheet" href="/asset/jquery-easyui-1.10.19/demo.css" crossorigin="anonymous">
+
+<!-- EasyUI JS -->
+<script type="text/javascript" src="/asset/jquery-easyui-1.10.19/jquery.min.js"></script>
+<script type="text/javascript" src="/asset/jquery-easyui-1.10.19/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="/asset/jquery-easyui-1.10.19/src/jquery.tabs.js"></script>
+
+<!-- FontAwesome CSS -->
+<link href="/asset/fontawesome6/css/fontawesome.css" rel="stylesheet" />
+<link href="/asset/fontawesome6/css/brands.css" rel="stylesheet" />
+<link href="/asset/fontawesome6/css/solid.css" rel="stylesheet" />
+
+
     <link rel="stylesheet" href="/asset/style-simple.css" />
 </head>
 <body class="easyui-layout"> 
@@ -53,15 +75,17 @@
                         </div>
                         <div data-options="region:'center'">
                             <div class="easyui-layout" data-options="fit:true,border:false" >                        
-                                <div data-options="region:'center'">
+                                <div data-options="region:'center'" style="overflow: hidden;">
                                     <div id="map"></div>
                                 </div>
                                 <div data-options="region:'south',split:true"  style="height:55%;">
                                     <div class="easyui-layout" data-options="fit:true,border:false">                        
                                         <div data-options="region:'north'"  style="height:50px;">
                                             <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-add'">Add</a>
-        <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-remove'">Remove</a>
-        <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-save'">Save</a>
+                                            <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-remove'">Remove</a>
+                                            <a href="#" class="easyui-linkbutton" data-options="iconCls:'icon-save'">Save</a>
+                                            <a href="#" class="easyui-linkbutton"><div id="distance">Distance: N/A</div></a>
+                                             <a href="#" class="easyui-linkbutton"><div id="distance1">Distance: N/A</div></a>
                                         </div>
                                         <div data-options="region:'center'">
                                             <div class="easyui-tabs" data-options="tools:'#tab-tools',fit:true,border:false" >
