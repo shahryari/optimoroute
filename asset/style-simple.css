@@ -32,17 +32,17 @@
 .icon-p{
     position: absolute;
         left: 0;
-        top: 5px;
+        top: 10px;
 }
 .icon-active{
     left: -3px;
-    top: 1px;
+    top: 7px;
     font-size: 46px;
     animation: b-pulse 1.5s infinite;
 }
  @keyframes b-pulse {
      0% {
-         color: rgba(255, 0, 0, 0.4);
+         color: rgba(255, 0, 0, 0.684);
      }
 
      70% {

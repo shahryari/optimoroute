@@ -9,11 +9,11 @@ $('input[type=checkbox]').change(function () {
     const index = customerId.split('customer').join('');
     if (isChecked) {
         showIcons(customerId);
-        highlightMarker(customerMarkers[parseInt(index)])
+        highlightMarker(customerMarkers[parseInt(index)], true)
 
     } else {
         hideIcons(customerId);
-        highlightMarker(customerMarkers[parseInt(index)])
+        highlightMarker(customerMarkers[parseInt(index)], false)
 
     }
 });
@@ -114,30 +114,31 @@ map.on(L.Draw.Event.CREATED, function (event) {
         var isWaypoint = routingControls.some(control =>
             control.getWaypoints().some(wp => wp.latLng && wp.latLng.lat === markerLatLng.lat && wp.latLng.lng === markerLatLng.lng)
         );
-        if (layer.getBounds().contains(markerLatLng)) {
-            createNumberedMarker(1, false);
-        }
-
+        console.log("isWaypoint", isWaypoint)
         if (!isWaypoint) {
             if (layer.getBounds().contains(markerLatLng)) {
-                createNumberedMarker(1, true);
                 if (marker.getElement()) {
-                    marker.getElement().classList.add('active-marker');
+                    marker.setIcon(createDefaultMarker(true));
 
                 }
             } else {
                 if (marker.getElement()) {
-                    marker.getElement().classList.remove('active-marker');
+                    marker.setIcon(createDefaultMarker(false));
                 }
             }
         }
+        else {
+            if (marker.getElement()) {
+                marker.setIcon(createDefaultMarker(false));
+            }
+        }
     });
-  
+
     routingControls.forEach((control, index) => {
         var waypoints = control.getWaypoints();
         var newWaypoints = waypoints.filter(function (waypoint) {
             var latLng = waypoint.latLng;
-
+            if (latLng === null) return false;
             if (layer instanceof L.Rectangle) {
                 return !layer.getBounds().contains(latLng);
             }
@@ -161,7 +162,7 @@ map.on(L.Draw.Event.DELETED, function (event) {
                 const markerLatLng = marker.getLatLng();
                 const isInRoute = isInRouteFunc(markerLatLng, route);
                 if (!isInRoute) {
-                    marker.setIcon(L.marker(marker.getLatLng()).addTo(markers).options.icon); // Reset to default icon
+                    marker.setIcon(createDefaultMarker(false)); // Reset to default icon
                 }
                 return isInRoute;
             });
@@ -357,12 +358,13 @@ $('#customersTable').datagrid({
 
     onCheck: function (index, row) {
         showIcons(index);
-        highlightMarker(customerMarkers[index + 1]);
+        var rows = $('#customersTable').datagrid('getSelected');
+        highlightMarker(customerMarkers[index + 1], true);
     },
 
     onUncheck: function (index, row) {
         hideIcons(index);
-        highlightMarker(customerMarkers[index + 1]);
+        highlightMarker(customerMarkers[index + 1], false);
     }
 });
 
@@ -435,7 +437,7 @@ function drawPolylineFromGeoJSON(geojson) {
                         radius: 10,
                     });
                 } else {
-                    return new L.Marker(latlng).addTo(markers);
+                    return new L.Marker(latlng, { icon: createDefaultMarker(false) }).addTo(markers);
                 }
             },
             onEachFeature: function (feature, layer) {
@@ -598,7 +600,7 @@ customers.forEach((customer) => {
                 <div class="popup-row"><span class="popup-label">Location:</span> ${customer.location}</div>
                 <div class="popup-row"><span class="popup-label">Duration:</span> ${customer.duration}</div>
             `;
-    var marker = L.marker(customer.address).addTo(markers);
+    var marker = L.marker(customer.address, { icon: createDefaultMarker(false) }).addTo(markers);
 
     marker.bindPopup(popupContent, { closeButton: false })
         .on('click', onMarkerClick)
@@ -679,6 +681,15 @@ function createNumberedMarker(number, isActive = false) {
         popupAnchor: [0, -30],
     });
 }
+function createDefaultMarker(isActive = false) {
+    return L.divIcon({
+        className: "custom-icon",
+        html: `<div class='content-icon'><i class='fa-solid fa-location-dot icon-p ${isActive ? 'icon-active' : ''}'></i><i class='fa-solid fa-location-dot icon-p '></i></div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        popupAnchor: [0, -30],
+    });
+}
 function highlightNumericMarker(id, dataCollection, markerCollection) {
     // Reset all markers to default
     Object.values(markerCollection).forEach((marker) => {
@@ -697,17 +708,30 @@ function highlightNumericMarker(id, dataCollection, markerCollection) {
     });
 }
 
-function highlightMarker(markerCollection) {
-    var markerElement = markerCollection.getElement();
+function highlightMarker(markerCollection, isActive) {
 
-    // Check if the marker already has the active-marker class
-    var isActive = markerElement.classList.contains('active-marker');
+    markers.eachLayer(function (m) {
+        var selectedRows = $('#customersTable').datagrid('getSelections');
+        if (selectedRows) {
+            var isMarkerInSelectedRows = selectedRows.some(selectedRow => {
+                return m.getLatLng().lat === selectedRow.address[0] && m.getLatLng().lng === selectedRow.address[1];
+            });
 
-    // Toggle the active-marker class
-    if (isActive) {
-        markerElement.classList.remove('active-marker'); // Remove active-marker class
+            // If the marker is not in any selected row, reset its icon
+            if (!isMarkerInSelectedRows && m.getElement()) {
+                m.setIcon(createDefaultMarker(false));
+            }
+        }
+    });
+
+
+    var markerElement = markerCollection.getElement().querySelectorAll('.content-icon .icon-p');
+    // var isActive = markerElement[0].classList.contains("icon-active");
+
+    if (!isActive) {
+        markerElement[0].classList.remove('icon-active'); // Remove active-marker class
     } else {
-        markerElement.classList.add('active-marker'); // Add active-marker class
+        markerElement[0].classList.add('icon-active'); // Add active-marker class
     }
 
     // Center the map on the selected marker
