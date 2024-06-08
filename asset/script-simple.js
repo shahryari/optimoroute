@@ -142,16 +142,24 @@ map.on(L.Draw.Event.CREATED, function (event) {
             if (layer instanceof L.Rectangle) {
                 return !layer.getBounds().contains(latLng);
             }
-            // else f (layer instanceof L.Circle) {
-            //     var distance = map.distance(layer.getLatLng(), latLng);
-            //     return distance > layer.getRadius();
-            // } else if (layer instanceof L.Polygon) {
-            //     return !layer.getBounds().contains(latLng);
-            // }
+            // Additional shape handling can be added here (circle, polygon, etc.)
 
         });
 
-        control.setWaypoints(newWaypoints);
+        if (newWaypoints.length <= 1) {
+            // Remove the routing and reset the marker
+            control.setWaypoints([]);
+            markers.eachLayer(function (marker) {
+                var markerLatLng = marker.getLatLng();
+                if (waypoints.some(wp => wp.latLng && wp.latLng.lat === markerLatLng.lat && wp.latLng.lng === markerLatLng.lng)) {
+                    if (marker.getElement()) {
+                        marker.setIcon(createDefaultMarker(false));
+                    }
+                }
+            });
+        } else {
+            control.setWaypoints(newWaypoints);
+        }
     });
 });
 
@@ -334,7 +342,7 @@ var orders = [
         id: 1004,
         priority: "Medium",
         location: "East Point",
-        address: [41.698629, 44.887356],
+        address: [41.59862, 44.887356],
         duration: "40 min",
         driver: "Driver 001",
         stopNumber: 2,
@@ -362,7 +370,7 @@ $('#customersTable').datagrid({
         highlightMarker(customerMarkers[index + 1], true);
     },
 
-    onUncheck: function (index, row) {
+    onUnselect: function (index, row) {
         hideIcons(index);
         highlightMarker(customerMarkers[index + 1], false);
     }
@@ -505,60 +513,6 @@ function removePolyline(polylines) {
     });
 
 }
-// function drawRoutingFromSelectedMarkers(waypoints) {
-//     // Ensure there are at least two selected markers for routing
-//     if (waypoints.length >= 2) {
-//         // Extract coordinates of selected markers
-
-//         // Clear any existing routing controls
-//         clearRoutingControls();
-
-//         // Create routing control with selected waypoints
-//         var control = L.Routing.control({
-//             waypoints: waypoints,
-//             show: false,
-//             containerClassName: 'd-none',
-//             lineOptions: {
-//                 styles: [{ color: '#2e2d2d', opacity: 0.8, weight: 9 }, { color: 'white', opacity: 1, weight: 1, dashArray: '5, 5' }]
-//             },
-//             createMarker: function (i, waypoint, n) {
-//                 // Custom marker icon
-//                 return L.marker(waypoint.latLng, {
-//                     draggable: false,
-//                     icon: createNumberedMarker(i + 1) // Use a custom marker icon
-//                 }).addTo(markers);
-//             }
-//         }).addTo(map);
-//         control.on('routesfound', function (e) {
-//             var routes = e.routes;
-//             var distancesDiv = document.getElementById('distance1');
-
-//             // Clear previous distances
-//             distancesDiv.innerHTML = 'Distances:';
-
-//             // Calculate and display distances between waypoints
-//             for (var i = 0; i < routes.length; i++) {
-//                 var leg = routes[i];
-//                 var distance = (leg.summary.totalDistance / 1000).toFixed(2) + ' km'; // Distance in kilometers
-//                 var segmentInfo = document.createElement('div');
-//                 segmentInfo.className = 'distance-segment';
-//                 segmentInfo.innerHTML = 'Segment ' + (i + 1) + ': ' + distance;
-//                 distancesDiv.appendChild(segmentInfo);
-//             }
-//         });
-//     } else {
-//         // Handle case when there are not enough markers selected for routing
-//         console.log("At least two markers are required for routing.");
-//     }
-// }
-
-// function clearRoutingControls() {
-//     // Check if routing control exists and remove it from the map
-//     if (routingControl) {
-//         map.removeControl(routingControl);
-//         routingControl = null;
-//     }
-// }
 
 function extractRoutes(r) {
     const routes = [];
@@ -603,8 +557,7 @@ customers.forEach((customer) => {
     var marker = L.marker(customer.address, { icon: createDefaultMarker(false) }).addTo(markers);
 
     marker.bindPopup(popupContent, { closeButton: false })
-        .on('click', onMarkerClick)
-        ;
+        .on('click', onMarkerClick) ;
 
     marker.on("mouseover", function (e) {
         this.openPopup();
