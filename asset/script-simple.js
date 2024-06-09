@@ -53,8 +53,10 @@ function flattenAndSwapCoordinates(arr) {
     function flatten(arr) {
         for (let item of arr) {
             if (isCoordinatePair(item)) {
-                // Swap the coordinates
-                result.push({ lat: item[1], lng: item[0] });
+                const coordinate = { lat: item[1], lng: item[0] };
+                if (!result.some(existing => existing.lat === coordinate.lat && existing.lng === coordinate.lng)) {
+                    result.push(coordinate);
+                }
             } else if (Array.isArray(item)) {
                 flatten(item);
             }
@@ -107,12 +109,22 @@ var markers = new L.LayerGroup().addTo(map);
 map.on(L.Draw.Event.CREATED, function (event) {
     var layer = event.layer;
     //drawnItems.addLayer(layer);
+    let tempWayPoints = []
 
     markers.eachLayer(function (marker) {
         var markerLatLng = marker.getLatLng();
 
-        var isWaypoint = routingControls.some(control =>
-            control.getWaypoints().some(wp => wp.latLng && wp.latLng.lat === markerLatLng.lat && wp.latLng.lng === markerLatLng.lng)
+        var isWaypoint = routingControls.some(control => {
+            if (control.getWaypoints().some(wp => wp.latLng && wp.latLng.lat === markerLatLng.lat && wp.latLng.lng === markerLatLng.lng)) {
+                // if (tempWayPoints.indexOf([markerLatLng.lng, markerLatLng.lat]) === -1) {
+                //     tempWayPoints.push([markerLatLng.lng, markerLatLng.lat]);
+                //     selectedMarkers.push(marker);
+                // }
+
+                return true;
+            }
+            return false;
+        }
         );
         console.log("isWaypoint", isWaypoint)
         if (!isWaypoint) {
@@ -140,9 +152,9 @@ map.on(L.Draw.Event.CREATED, function (event) {
             var latLng = waypoint.latLng;
             if (latLng === null) return false;
             if (layer instanceof L.Rectangle) {
+
                 return !layer.getBounds().contains(latLng);
             }
-            // Additional shape handling can be added here (circle, polygon, etc.)
 
         });
 
@@ -153,13 +165,25 @@ map.on(L.Draw.Event.CREATED, function (event) {
                 var markerLatLng = marker.getLatLng();
                 if (waypoints.some(wp => wp.latLng && wp.latLng.lat === markerLatLng.lat && wp.latLng.lng === markerLatLng.lng)) {
                     if (marker.getElement()) {
+                        if (tempWayPoints.indexOf([markerLatLng.lng, markerLatLng.lat]) === -1) {
+                            tempWayPoints.push([markerLatLng.lng, markerLatLng.lat]);
+                            selectedMarkers.push(marker);
+                        }
+
                         marker.setIcon(createDefaultMarker(false));
                     }
                 }
             });
+            //tempWayPoints.push([newWaypoints[0].latlng.lng, newWaypoints[0].latlng.lat]);
+            //selectedMarkers.push(newWaypoints);
         } else {
             control.setWaypoints(newWaypoints);
         }
+        geoJson.features[0].geometry.coordinates = tempWayPoints;
+        drawPolylineFromGeoJSON(geoJson)
+        tempselectedMarkers.push(selectedMarkers)
+        tempWayPoints = [];
+        selectedMarkers = [];
     });
 });
 
@@ -178,9 +202,7 @@ map.on(L.Draw.Event.DELETED, function (event) {
             // Update the icons for the remaining selected markers
             const routes = extractRoutes(route);
             routes.forEach((r, index) => {
-                var markerIndex = 0
                 const selectedMarkersForRoute = selectedMarkers.filter((marker, i) => {
-
                     const markerLatLng = marker.getLatLng();
                     const t = isInRouteFunc(markerLatLng, r);
                     return t;
@@ -288,6 +310,7 @@ let latlngs = [];
 let orderMarkers = [];
 let customerMarkers = {};
 let selectedMarkers = []; // Store selected markers
+let tempselectedMarkers = [];
 let polyline = null; // Store the polyline
 let route = [];
 let polylines = [];
@@ -311,48 +334,17 @@ var geoJson = {
 };
 // Orders data
 var orders = [
-    {
-        id: 1001,
-        priority: "Medium",
-        location: "East Point",
-        address: [41.698629, 44.887356],
-        duration: "30 min",
-        driver: "Driver 001",
-        stopNumber: 1,
-    },
-    {
-        id: 1002,
-        priority: "Medium",
-        location: "Tbilisi Mall",
-        address: [41.870564, 44.77256],
-        duration: "45 min",
-        driver: "Driver 001",
-        stopNumber: 3,
-    },
-    {
-        id: 1003,
-        priority: "Medium",
-        location: "City Mall",
-        address: [41.726045, 44.737074],
-        duration: "5 min",
-        driver: "Driver 001",
-        stopNumber: 4,
-    },
-    {
-        id: 1004,
-        priority: "Medium",
-        location: "East Point",
-        address: [41.59862, 44.887356],
-        duration: "40 min",
-        driver: "Driver 001",
-        stopNumber: 2,
-    },
+    { id: 1001, priority: "Medium", location: "East Point", address: [41.698629, 44.887356], duration: "30 min", driver: "Driver 001", stopNumber: 1, },
+    { id: 1002, priority: "Medium", location: "Tbilisi Mall", address: [41.870564, 44.77256], duration: "45 min", driver: "Driver 001", stopNumber: 3, },
+    { id: 1003, priority: "Medium", location: "City Mall", address: [41.726045, 44.737074], duration: "5 min", driver: "Driver 001", stopNumber: 4, },
+    { id: 1004, priority: "Medium", location: "East Point", address: [41.59862, 44.887356], duration: "40 min", driver: "Driver 001", stopNumber: 2, },
 ];
 var customers = [
     { id: 001, location: "East Point", address: [41.398629, 44.887356], duration: "30 min" },
     { id: 002, location: "Tbilisi Mall", address: [41.270564, 44.77256], duration: "45 min" },
     { id: 003, location: "City Mall", address: [41.126045, 44.737074], duration: "5 min" },
     { id: 004, location: "Shop center", address: [41.298629, 44.887356], duration: "40 min" },
+    { id: 005, location: "Mall center", address: [41.128629, 44.447356], duration: "40 min" },
 ];
 
 // Initialize the datagrid
@@ -394,26 +386,135 @@ $('#orderTable').datagrid({
     ]]
 });
 
+function countDefinedElements(arr) {
+    return arr.filter(element => element !== undefined).length;
+}
+
+function findArrayWithMostDefinedElements(arrays) {
+    return arrays.reduce((biggest, current) => {
+        return countDefinedElements(current) > countDefinedElements(biggest) ? current : biggest;
+    }, []);
+}
+function findIndexOfLongestArray(arrays) {
+    let maxLength = -1;
+    let index = -1;
+
+    arrays.forEach((arr, i) => {
+        if (arr.length > maxLength) {
+            maxLength = arr.length;
+            index = i;
+        }
+    });
+
+    return index;
+}
+function findMarkerInRoute(markerLatLng) {
+    for (let i = 0; i < route.length; i++) {
+        for (let j = 0; j < route[i].length; j++) {
+            let [lng, lat] = route[i][j];
+            if (lat === markerLatLng.getLatLng().lat && lng === markerLatLng.getLatLng().lng) {
+                return { routeIndex: i, markerIndex: j };
+            }
+        }
+    }
+    return null; // Marker not found in the route
+}
+function findRouteInRoute(markerLatLng) {
+    for (let i = 0; i < tempselectedMarkers.length; i++) {
+        for (let j = 0; j < tempselectedMarkers[i].length; j++) {
+            if (markerLatLng.getLatLng().lat === tempselectedMarkers[i][j].getLatLng().lat && markerLatLng.getLatLng().lng === tempselectedMarkers[i][j].getLatLng().lng) {
+                if (isMiddleIndex(tempselectedMarkers, j)) return null;
+                return { routeIndex: i, markerIndex: j };
+            }
+        }
+    }
+    return null; // Marker not found in the route
+}
+function isMiddleIndex(arr, index) {
+    const len = arr.length;
+    if (len === 0) {
+        return false; // An empty array has no middle index
+    }
+    const mid = Math.floor(len / 2);
+    if (len % 2 === 0) {
+        // Even length: two middle indices
+        return index === mid - 1 || index === mid;
+    } else {
+        // Odd length: one middle index
+        return index === mid;
+    }
+}
+let markerInRoute1;
+let markerInRoute2;
 //Function to handle marker click
 function onMarkerClick(e) {
     $('#map').css('cursor', 'not-allowed');
     var marker = e.target;
-
-    // Toggle marker selection state
-    if (selectedMarkers.includes(marker)) return;
-
-    // Add marker to selectedMarkers array
-    selectedMarkers.push(marker);
-    // Coordinates to add
-    var newCoordinates = [
-        [e.latlng.lng, e.latlng.lat]
-    ];
-
-    if (geoJson.features[0].geometry.coordinates.length >= 2) {
-        geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.slice(-1)
+    let maxRouteIndex = 0
+    let t = findMarkerInRoute(marker);
+    if (markerInRoute1 == null) {
+        markerInRoute1 = findRouteInRoute(marker);
+        selectedMarkers = markerInRoute1 === null ? selectedMarkers : tempselectedMarkers[markerInRoute1.routeIndex];
+    }
+    else if (markerInRoute1) {
+        markerInRoute2 = findRouteInRoute(marker);
+        if (markerInRoute2) {
+            if (markerInRoute1.routeIndex === markerInRoute2.routeIndex) {
+                markerInRoute1 = null;
+                markerInRoute2 = null;
+                return;
+            }
+        }
 
     }
-    geoJson.features[0].geometry.coordinates.push(...newCoordinates)
+
+    if (markerInRoute1 !== null && markerInRoute2 !== null) {
+        if (tempselectedMarkers[markerInRoute1.routeIndex].length > tempselectedMarkers[markerInRoute2.routeIndex].length) {
+            geoJson.features[0].geometry.coordinates = [];
+            removePolyline(polylines);
+            selectedMarkers = tempselectedMarkers[markerInRoute1.routeIndex];
+            selectedMarkers.splice(markerInRoute1.markerIndex + 1, 0, ...tempselectedMarkers[markerInRoute2.routeIndex])
+            selectedMarkers.forEach((t, i) => {
+                var newCoordinates = [
+                    [t.getLatLng().lng, t.getLatLng().lat]
+                ];
+                geoJson.features[0].geometry.coordinates.push(...newCoordinates)
+            })
+
+
+        }
+    }
+    else {
+        selectedMarkers.push(marker);
+        var newCoordinates = [
+            [e.latlng.lng, e.latlng.lat]
+        ];
+        if (geoJson.features[0].geometry.coordinates.length >= 2) {
+            geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.slice(-1)
+
+        }
+        geoJson.features[0].geometry.coordinates.push(...newCoordinates)
+    }
+    // if (route.length > 0) {
+    //     let routesEx = extractRoutes(route);
+    //     maxRouteIndex = findIndexOfLongestArray(routesEx);
+    //     route[maxRouteIndex].push([marker.latLng.lat, marker.latl])
+    // }
+    // if (te && selectedMarkers.length === 0) {
+    //     // tempselectedMarkers[te.routeIndex].splice(te.markerIndex, 0, marker);
+    //     // selectedMarkers = tempselectedMarkers[te.routeIndex];
+    //     // tempselectedMarkers = [];
+    //     firstSelect = te;
+    // }
+
+    // Toggle marker selection state
+    //if (selectedMarkers.includes(marker)) return;
+
+    // Add marker to selectedMarkers array
+    // Coordinates to add
+
+
+
 
     //setGeojsonToMap(geoJson);
     //updatePolyline(); // Update the polyline
@@ -557,7 +658,7 @@ customers.forEach((customer) => {
     var marker = L.marker(customer.address, { icon: createDefaultMarker(false) }).addTo(markers);
 
     marker.bindPopup(popupContent, { closeButton: false })
-        .on('click', onMarkerClick) ;
+        .on('click', onMarkerClick);
 
     marker.on("mouseover", function (e) {
         this.openPopup();
