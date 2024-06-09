@@ -181,7 +181,6 @@ map.on(L.Draw.Event.CREATED, function (event) {
         }
         geoJson.features[0].geometry.coordinates = tempWayPoints;
         drawPolylineFromGeoJSON(geoJson)
-        tempselectedMarkers.push(selectedMarkers)
         tempWayPoints = [];
         selectedMarkers = [];
     });
@@ -310,7 +309,6 @@ let latlngs = [];
 let orderMarkers = [];
 let customerMarkers = {};
 let selectedMarkers = []; // Store selected markers
-let tempselectedMarkers = [];
 let polyline = null; // Store the polyline
 let route = [];
 let polylines = [];
@@ -408,113 +406,33 @@ function findIndexOfLongestArray(arrays) {
 
     return index;
 }
-function findMarkerInRoute(markerLatLng) {
-    for (let i = 0; i < route.length; i++) {
-        for (let j = 0; j < route[i].length; j++) {
-            let [lng, lat] = route[i][j];
-            if (lat === markerLatLng.getLatLng().lat && lng === markerLatLng.getLatLng().lng) {
-                return { routeIndex: i, markerIndex: j };
-            }
-        }
-    }
-    return null; // Marker not found in the route
-}
-function findRouteInRoute(markerLatLng) {
-    for (let i = 0; i < tempselectedMarkers.length; i++) {
-        for (let j = 0; j < tempselectedMarkers[i].length; j++) {
-            if (markerLatLng.getLatLng().lat === tempselectedMarkers[i][j].getLatLng().lat && markerLatLng.getLatLng().lng === tempselectedMarkers[i][j].getLatLng().lng) {
-                if (isMiddleIndex(tempselectedMarkers, j)) return null;
-                return { routeIndex: i, markerIndex: j };
-            }
-        }
-    }
-    return null; // Marker not found in the route
-}
-function isMiddleIndex(arr, index) {
-    const len = arr.length;
-    if (len === 0) {
-        return false; // An empty array has no middle index
-    }
-    const mid = Math.floor(len / 2);
-    if (len % 2 === 0) {
-        // Even length: two middle indices
-        return index === mid - 1 || index === mid;
-    } else {
-        // Odd length: one middle index
-        return index === mid;
-    }
-}
-let markerInRoute1;
-let markerInRoute2;
 //Function to handle marker click
 function onMarkerClick(e) {
     $('#map').css('cursor', 'not-allowed');
     var marker = e.target;
     let maxRouteIndex = 0
-    let t = findMarkerInRoute(marker);
-    if (markerInRoute1 == null) {
-        markerInRoute1 = findRouteInRoute(marker);
-        selectedMarkers = markerInRoute1 === null ? selectedMarkers : tempselectedMarkers[markerInRoute1.routeIndex];
-    }
-    else if (markerInRoute1) {
-        markerInRoute2 = findRouteInRoute(marker);
-        if (markerInRoute2) {
-            if (markerInRoute1.routeIndex === markerInRoute2.routeIndex) {
-                markerInRoute1 = null;
-                markerInRoute2 = null;
-                return;
-            }
-        }
-
-    }
-
-    if (markerInRoute1 !== null && markerInRoute2 !== null) {
-        if (tempselectedMarkers[markerInRoute1.routeIndex].length > tempselectedMarkers[markerInRoute2.routeIndex].length) {
-            geoJson.features[0].geometry.coordinates = [];
-            removePolyline(polylines);
-            selectedMarkers = tempselectedMarkers[markerInRoute1.routeIndex];
-            selectedMarkers.splice(markerInRoute1.markerIndex + 1, 0, ...tempselectedMarkers[markerInRoute2.routeIndex])
-            selectedMarkers.forEach((t, i) => {
-                var newCoordinates = [
-                    [t.getLatLng().lng, t.getLatLng().lat]
-                ];
-                geoJson.features[0].geometry.coordinates.push(...newCoordinates)
-            })
-
-
-        }
-    }
-    else {
-        selectedMarkers.push(marker);
-        var newCoordinates = [
-            [e.latlng.lng, e.latlng.lat]
-        ];
-        if (geoJson.features[0].geometry.coordinates.length >= 2) {
-            geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.slice(-1)
-
-        }
-        geoJson.features[0].geometry.coordinates.push(...newCoordinates)
-    }
     // if (route.length > 0) {
     //     let routesEx = extractRoutes(route);
     //     maxRouteIndex = findIndexOfLongestArray(routesEx);
     //     route[maxRouteIndex].push([marker.latLng.lat, marker.latl])
     // }
-    // if (te && selectedMarkers.length === 0) {
-    //     // tempselectedMarkers[te.routeIndex].splice(te.markerIndex, 0, marker);
-    //     // selectedMarkers = tempselectedMarkers[te.routeIndex];
-    //     // tempselectedMarkers = [];
-    //     firstSelect = te;
-    // }
+
 
     // Toggle marker selection state
-    //if (selectedMarkers.includes(marker)) return;
+    if (selectedMarkers.includes(marker)) return;
 
     // Add marker to selectedMarkers array
+    selectedMarkers.push(marker);
     // Coordinates to add
+    var newCoordinates = [
+        [e.latlng.lng, e.latlng.lat]
+    ];
 
+    if (geoJson.features[0].geometry.coordinates.length >= 2) {
+        geoJson.features[0].geometry.coordinates = geoJson.features[0].geometry.coordinates.slice(-1)
 
-
+    }
+    geoJson.features[0].geometry.coordinates.push(...newCoordinates)
 
     //setGeojsonToMap(geoJson);
     //updatePolyline(); // Update the polyline
