@@ -97,7 +97,7 @@ var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 map.addControl(new L.Control.Draw({
     edit: { featureGroup: drawnItems, poly: { allowIntersection: false }, edit: false },
-    draw: { polyline: false, polygon: false, rectangle: true, circle: false, marker: false, circlemarker: false },
+    draw: { polyline: false, polygon: true, rectangle: true, circle: false, marker: false, circlemarker: false },
 }));
 L.Rectangle.include({
     contains: function (latLng) {
@@ -152,6 +152,10 @@ map.on(L.Draw.Event.CREATED, function (event) {
             var latLng = waypoint.latLng;
             if (latLng === null) return false;
             if (layer instanceof L.Rectangle) {
+
+                return !layer.getBounds().contains(latLng);
+            }
+            else if (layer instanceof L.polygon) {
 
                 return !layer.getBounds().contains(latLng);
             }
@@ -485,6 +489,7 @@ function onMarkerClick(e) {
         }
     }
     else {
+        if (selectedMarkers.includes(marker)) return;
         selectedMarkers.push(marker);
         var newCoordinates = [
             [e.latlng.lng, e.latlng.lat]
@@ -521,6 +526,37 @@ function onMarkerClick(e) {
     drawPolylineFromGeoJSON(geoJson);
 }
 
+function dblMarkerClick(event) {
+    var clickMarker = event.target;
+    geoJson.features[0].geometry.coordinates = [];
+    selectedMarkers = selectedMarkers.filter(marker => {
+        const markerLatLng = marker.getLatLng();
+        if (markerLatLng.equals(clickMarker.getLatLng())) {
+            clickMarker.setIcon(createDefaultMarker(false));
+            return false
+        }
+        var newCoordinates = [
+            [markerLatLng.lng, markerLatLng.lat]
+        ];
+        geoJson.features[0].geometry.coordinates.push(...newCoordinates)
+        return true;
+    });
+
+    // Update the icons for the remaining selected markers
+    // const routes = extractRoutes(route);
+    // var updatRoute;
+    // routes.forEach((r, index) => {
+    //     updatRoute = removeSubArrayContainingPair(r, [clickMarker.getLatLng().lng, clickMarker.getLatLng().lat])
+    // });
+    resetNumbersForRoute(selectedMarkers, 0);
+    // Update the GeoJSON coordinates if necessary
+    removePolyline(polylines);
+    //geoJson.features[0].geometry.coordinates.push(...newCoordinates)
+    route = []
+    routes = []
+    drawPolylineFromGeoJSON(geoJson);
+
+}
 
 function drawPolylineFromGeoJSON(geojson) {
     if (selectedMarkers.length >= 2) {
@@ -658,7 +694,7 @@ customers.forEach((customer) => {
     var marker = L.marker(customer.address, { icon: createDefaultMarker(false) }).addTo(markers);
 
     marker.bindPopup(popupContent, { closeButton: false })
-        .on('click', onMarkerClick);
+        .on('click', onMarkerClick).on('dblclick', dblMarkerClick);
 
     marker.on("mouseover", function (e) {
         this.openPopup();
