@@ -83,7 +83,7 @@ let config = {
 const zoom = 10;
 const lat = 41.7151;
 const lng = 44.8271;
-const map = L.map("map", config).setView([lat, lng], zoom);
+const map = L.map("map", config).setView([lat, lng], zoom).setActiveArea('viewport', true);
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
@@ -1044,7 +1044,7 @@ function highlightMarker(markerCollection, isActive) {
                 return m.getLatLng().lat === selectedRow.address[0] && m.getLatLng().lng === selectedRow.address[1];
             });
 
-            if (!isMarkerInSelectedRows && m.getElement()) {
+            if (isMarkerInSelectedRows && m.getElement()) {
                 m.setIcon(createDefaultMarker(false));
 
             }
@@ -1059,11 +1059,13 @@ function highlightMarker(markerCollection, isActive) {
     } else {
         markerElement[0].classList.add('icon-active'); // Add active-marker class
     }
-
-    map.setView(markerCollection.getLatLng(), map.getZoom(), {
-        animate: true,
-        pan: { duration: 1 }
-    });
+    //map.flyTo(markerCollection.getLatLng(), 13)
+    map.setView(markerCollection.getLatLng(), zoom)
+    //map.setZoom(map.getZoom() > map.getMinZoom() ? map.getZoom() - 1 : map.getMinZoom());
+    // map.setView(markerCollection.getLatLng(), map.getZoom(), {
+    //     animate: true,
+    //     pan: { duration: 1 }
+    // });
 }
 
 addRoutingControl(latlngs);
