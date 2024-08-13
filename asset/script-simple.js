@@ -30,7 +30,12 @@ function hideIcons(customerId) {
     $("#orders").removeClass("show-orders");
 }
 const saveButton = $('a[data-options*="iconCls:\'icon-save\'"]');
-saveButton.on('click', function () {
+saveButton.on('click', function (event) {
+    drawRouting();
+
+});
+
+function drawRouting() {
     const routes = extractRoutes(route);
     routes.forEach((r, index) => {
         //addRouteToMap(r);
@@ -42,7 +47,8 @@ saveButton.on('click', function () {
         removePolyline(polylineToRemove);
     });
     finishRoute();
-});
+}
+
 function isCoordinatePair(arr) {
     return Array.isArray(arr) && arr.length === 2 && arr.every(Number.isFinite);
 }
@@ -77,7 +83,7 @@ let config = {
 const zoom = 10;
 const lat = 41.7151;
 const lng = 44.8271;
-const map = L.map("map", config).setView([lat, lng], zoom);
+const map = L.map("map", config).setView([lat, lng], zoom).setActiveArea('viewport', true);
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
@@ -97,7 +103,7 @@ var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
 map.addControl(new L.Control.Draw({
     edit: { featureGroup: drawnItems, poly: { allowIntersection: false }, edit: false },
-    draw: { polyline: false, polygon: false, rectangle: true, circle: false, marker: false, circlemarker: false },
+    draw: { polyline: false, polygon: true, rectangle: true, circle: false, marker: false, circlemarker: false },
 }));
 L.Rectangle.include({
     contains: function (latLng) {
@@ -106,7 +112,10 @@ L.Rectangle.include({
 });
 
 var markers = new L.LayerGroup().addTo(map);
+var randomMarkers = [];
 map.on(L.Draw.Event.CREATED, function (event) {
+
+    //selectedMarkerFunction(event);
     var layer = event.layer;
     //drawnItems.addLayer(layer);
     let tempWayPoints = []
@@ -130,7 +139,24 @@ map.on(L.Draw.Event.CREATED, function (event) {
         if (!isWaypoint) {
             if (layer.getBounds().contains(markerLatLng)) {
                 if (marker.getElement()) {
-                    marker.setIcon(createDefaultMarker(true));
+                    //marker.setIcon(createDefaultMarker(true));
+                    randomMarkers.push(marker);
+                    drawnLayer = event.layer;
+                    drawnItems.addLayer(drawnLayer);
+                    const bounds = drawnLayer.getBounds();
+                    const center = bounds.getCenter();
+                    const containerPoint = map.latLngToContainerPoint(center);
+                    const mapContainer = map.getContainer();
+                    const mapRect = mapContainer.getBoundingClientRect();
+                    const windowPoint = {
+                        x: containerPoint.x + mapRect.left,
+                        y: containerPoint.y + mapRect.top
+                    };
+                    // Calculate the center of the drawn shape
+                    //const center = event.sourceTarget ? event.sourceTarget._size : { x: 0, y: 0 };
+                    console.log(windowPoint)
+                    // Show the context menu at the center of the drawn shape
+                    showContextMenu(event.originalEvent, windowPoint);
 
                 }
             } else {
@@ -152,6 +178,10 @@ map.on(L.Draw.Event.CREATED, function (event) {
             var latLng = waypoint.latLng;
             if (latLng === null) return false;
             if (layer instanceof L.Rectangle) {
+
+                return !layer.getBounds().contains(latLng);
+            }
+            else if (layer instanceof L.polygon) {
 
                 return !layer.getBounds().contains(latLng);
             }
@@ -179,11 +209,17 @@ map.on(L.Draw.Event.CREATED, function (event) {
         } else {
             control.setWaypoints(newWaypoints);
         }
-        geoJson.features[0].geometry.coordinates = tempWayPoints;
-        drawPolylineFromGeoJSON(geoJson)
-        tempselectedMarkers.push(selectedMarkers)
-        tempWayPoints = [];
-        selectedMarkers = [];
+
+        if (tempWayPoints.length > 0) {
+            geoJson.features[0].geometry.coordinates = tempWayPoints;
+            drawPolylineFromGeoJSON(geoJson)
+            tempselectedMarkers.push(selectedMarkers)
+            tempWayPoints = [];
+            selectedMarkers = [];
+            console.log("clean")
+        }
+
+
     });
 });
 
@@ -219,6 +255,103 @@ map.on(L.Draw.Event.DELETED, function (event) {
     });
 });
 
+function selectedMarkerFunction(event) {
+
+
+
+    var layer = event.layer;
+    //drawnItems.addLayer(layer);
+    let tempWayPoints = [];
+
+    markers.eachLayer(function (marker) {
+        var markerLatLng = marker.getLatLng();
+
+        var isWaypoint = routingControls.some(control => {
+            if (control.getWaypoints().some(wp => wp.latLng && wp.latLng.lat === markerLatLng.lat && wp.latLng.lng === markerLatLng.lng)) {
+                // if (tempWayPoints.indexOf([markerLatLng.lng, markerLatLng.lat]) === -1) {
+                //     tempWayPoints.push([markerLatLng.lng, markerLatLng.lat]);
+                //     selectedMarkers.push(marker);
+                // }
+                return true;
+            }
+            return false;
+        }
+        );
+        console.log("isWaypoint", isWaypoint);
+        if (!isWaypoint) {
+            if (layer.getBounds().contains(markerLatLng)) {
+                if (marker.getElement()) {
+                    marker.setIcon(createDefaultMarker(true));
+
+                }
+            } else {
+                if (marker.getElement()) {
+                    marker.setIcon(createDefaultMarker(false));
+                }
+            }
+        }
+        else {
+            if (marker.getElement()) {
+                marker.setIcon(createDefaultMarker(false));
+            }
+        }
+    });
+
+    routingControls.forEach((control, index) => {
+        var waypoints = control.getWaypoints();
+        var newWaypoints = waypoints.filter(function (waypoint) {
+            var latLng = waypoint.latLng;
+            if (latLng === null)
+                return false;
+            if (layer instanceof L.Rectangle) {
+
+                return !layer.getBounds().contains(latLng);
+            }
+            else if (layer instanceof L.polygon) {
+
+                return !layer.getBounds().contains(latLng);
+            }
+
+        });
+
+        if (newWaypoints.length <= 1) {
+            // Remove the routing and reset the marker
+            control.setWaypoints([]);
+            markers.eachLayer(function (marker) {
+                var markerLatLng = marker.getLatLng();
+                if (waypoints.some(wp => wp.latLng && wp.latLng.lat === markerLatLng.lat && wp.latLng.lng === markerLatLng.lng)) {
+                    if (marker.getElement()) {
+                        if (tempWayPoints.indexOf([markerLatLng.lng, markerLatLng.lat]) === -1) {
+                            tempWayPoints.push([markerLatLng.lng, markerLatLng.lat]);
+                            selectedMarkers.push(marker);
+                        }
+
+                        marker.setIcon(createDefaultMarker(false));
+                    }
+                }
+            });
+            //tempWayPoints.push([newWaypoints[0].latlng.lng, newWaypoints[0].latlng.lat]);
+            //selectedMarkers.push(newWaypoints);
+        } else {
+            control.setWaypoints(newWaypoints);
+        }
+        geoJson.features[0].geometry.coordinates = tempWayPoints;
+        drawPolylineFromGeoJSON(geoJson);
+        tempselectedMarkers.push(selectedMarkers);
+        tempWayPoints = [];
+        selectedMarkers = [];
+    });
+}
+
+function calculateCentroid(points) {
+    let sumX = 0, sumY = 0;
+    const len = points.length;
+    points.forEach(point => {
+        sumX += point.x;
+        sumY += point.y;
+    });
+    return { x: sumX / len, y: sumY / len };
+}
 function isInRouteFunc(markerLatLng, line) {
     return line.some(routePoint => {
         const isInPoint = routePoint.some(rp => {
@@ -235,9 +368,121 @@ function resetNumbersForRoute(selectedMarkers, routeIndex) {
     });
 }
 function finishRoute() {
-    geoJson.features[0].geometry.coordinates = [];
-    selectedMarkers = [];
-    route = [];
+    geoJson.features[0].geometry.coordinates.length = 0;
+    selectedMarkers.length = 0;
+    route.length = 0;
+    //drownRoutes.length = 0;
+}
+
+const contextMenu = document.getElementById('context-menu');
+// function showContextMenu(event) {
+
+//     const { clientX: mouseX, clientY: mouseY } = event;
+//     contextMenu.style.left = `${mouseX}px`;
+//     contextMenu.style.top = `${mouseY}px`;
+//     contextMenu.style.display = 'block';
+// }
+// Function to show the context menu
+function showContextMenu(event, position) {
+
+    const { clientX: mouseX, clientY: mouseY } = position;
+    contextMenu.style.left = `${position.x}px`;
+    contextMenu.style.top = `${position.y}px`;
+    contextMenu.style.display = 'block';
+}
+
+
+// Function to hide the context menu
+function hideContextMenu() {
+    contextMenu.style.display = 'none';
+}
+// map.on('contextmenu', function (event) {
+
+// });
+
+// // Event listener to hide context menu when clicking outside
+map.on('click', hideContextMenu);
+
+// Prevent default right-click menu
+map.getContainer().addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+});
+// Function to handle menu item click
+function handleMenuItemClick(event) {
+    const menuItem = event.target;
+    const menuItemId = menuItem.id;
+
+    switch (menuItemId) {
+        case 'draw-routing':
+            //selectedMarkers = randomMarker; 
+            //drawPolylineRandom();
+            drawRoutingRandom();
+            break;
+        default:
+            break;
+    }
+
+    hideContextMenu(); // Hide the menu after an option is selected
+    map.removeLayer(drawnItems);
+
+}
+
+// Add event listeners to menu items
+document.getElementById('draw-routing').addEventListener('click', handleMenuItemClick);
+
+function drawPolylineRandom() {
+    geoJson.features[0].geometry.coordinates.length = 0;
+
+    // Check if selectedMarkers is empty
+    if (selectedMarkers.length === 0) {
+        selectedMarkers = randomMarkers;
+    }
+
+    // Iterate over selectedMarkers to populate coordinates
+    let arr = [];
+    selectedMarkers.forEach(marker => {
+        const markerLatLng = marker.getLatLng();
+        const newCoordinates = [markerLatLng.lng, markerLatLng.lat];
+        arr.push(newCoordinates)
+
+    });
+
+    // Remove existing polyline layers
+    // removePolyline(polylines);
+
+    // drawPolylineFromGeoJSON(geoJson);
+    if (arr.length >= 2) {
+        geoJson.features[0].geometry.coordinates = arr;
+        route.length = 0;
+        drawPolylineFromGeoJSON(geoJson);
+    }
+}
+function drawRoutingRandom() {
+    if (selectedMarkers.length === 0) {
+        selectedMarkers = randomMarkers;
+    }
+
+    // Iterate over selectedMarkers to populate coordinates
+    let arr = [];
+    selectedMarkers.forEach(marker => {
+        const markerLatLng = marker.getLatLng();
+        const newCoordinates = [markerLatLng.lng, markerLatLng.lat];
+        arr.push(newCoordinates)
+
+    });
+
+    // Remove existing polyline layers
+    // removePolyline(polylines);
+
+    // drawPolylineFromGeoJSON(geoJson);
+    if (arr.length >= 2) {
+
+        // drownRoutes.length = 0;
+        // drownRoutes.push(arr);
+        route.length = 0;
+        route.push(arr);
+        drawRouting();
+    }
 }
 // --------------------------------------------------
 // Function to add a routing control
@@ -249,6 +494,7 @@ function addRoutingControl(waypoints) {
         containerClassName: 'd-none',
         addWaypoints: false,
         draggableWaypoints: false,
+        fitSelectedRoutes: false,
         lineOptions: {
             styles: [{ color: '#2e2d2d', opacity: 0.8, weight: 9 }, { color: 'white', opacity: 1, weight: 1, dashArray: '5, 5' }]
         },
@@ -360,6 +606,7 @@ $('#customersTable').datagrid({
         showIcons(index);
         var rows = $('#customersTable').datagrid('getSelected');
         highlightMarker(customerMarkers[index + 1], true);
+        //clickZoom(customerMarkers[index + 1])
     },
 
     onUnselect: function (index, row) {
@@ -444,8 +691,8 @@ function isMiddleIndex(arr, index) {
         return index === mid;
     }
 }
-let markerInRoute1;
-let markerInRoute2;
+let markerInRoute1 = null;
+let markerInRoute2 = null;
 //Function to handle marker click
 function onMarkerClick(e) {
     $('#map').css('cursor', 'not-allowed');
@@ -485,6 +732,7 @@ function onMarkerClick(e) {
         }
     }
     else {
+        if (selectedMarkers.includes(marker)) return;
         selectedMarkers.push(marker);
         var newCoordinates = [
             [e.latlng.lng, e.latlng.lat]
@@ -521,12 +769,46 @@ function onMarkerClick(e) {
     drawPolylineFromGeoJSON(geoJson);
 }
 
+function dblMarkerClick(event) {
+    var clickMarker = event.target;
+    geoJson.features[0].geometry.coordinates.length = 0;
+    selectedMarkers = selectedMarkers.filter(marker => {
+        const markerLatLng = marker.getLatLng();
+        if (markerLatLng.equals(clickMarker.getLatLng())) {
+            clickMarker.setIcon(createDefaultMarker(false));
+            return false
+        }
+        var newCoordinates = [
+            [markerLatLng.lng, markerLatLng.lat]
+        ];
+        geoJson.features[0].geometry.coordinates.push(...newCoordinates)
+        return true;
+    });
 
+    // Update the icons for the remaining selected markers
+    // const routes = extractRoutes(route);
+    // var updatRoute;
+    // routes.forEach((r, index) => {
+    //     updatRoute = removeSubArrayContainingPair(r, [clickMarker.getLatLng().lng, clickMarker.getLatLng().lat])
+    // });
+    tempselectedMarkers = selectedMarkers;
+    resetNumbersForRoute(selectedMarkers, 0);
+    // Update the GeoJSON coordinates if necessary
+    removePolyline(polylines);
+    //geoJson.features[0].geometry.coordinates.push(...newCoordinates)
+    route.length = 0;
+    //drownRoutes.length = 0
+    drawPolylineFromGeoJSON(geoJson);
+
+}
+let layer1 = null;
+let layer2;
 function drawPolylineFromGeoJSON(geojson) {
     if (selectedMarkers.length >= 2) {
         if (polyline != null) {
-            if (map.hasLayer(polyline))
+            if (map.hasLayer(polyline)) {
                 map.removeLayer(polyline);
+            }
         }
         const feature = L.geoJSON(geojson, {
             style: function (feature) {
@@ -550,65 +832,51 @@ function drawPolylineFromGeoJSON(geojson) {
                 }
             },
             onEachFeature: function (feature, layer) {
+                if (!layer1)
+                    layer1 = layer;
+                else
+                    layer2 = layer;
                 drawnItems.addLayer(layer);
                 const coordinates = feature.geometry.coordinates.toString();
-                route.push(feature.geometry.coordinates);
+                console.log("Adding coordinates:", feature.geometry.coordinates);
+                route.push(JSON.parse(JSON.stringify(feature.geometry.coordinates)));
+                console.log("Updated layer:", layer);
                 drownRoutes.push(feature.geometry.coordinates);
+                console.log(feature);
                 const result = coordinates.match(/[^,]+,[^,]+/g);
                 layer.bindPopup(
                     "<span>Coordinates:<br>" + result.join("<br>") + "</span>"
                 );
                 layer.on('remove', function (e) {
-                    //if (isBetweenPoints(e.target.getLatLngs().map(coord => `${coord.lng},${coord.lat}`), route.map(coord => coord.map(m => m.toString()).toString()))) {
                     const indexToRemove = route.map(coord => coord.map(m => m.toString()).toString()).indexOf(e.target.getLatLngs().map(coord => `${coord.lng},${coord.lat}`).toString());
                     if (indexToRemove !== -1) {
                         route.splice(indexToRemove, 1);
                     }
-                    // }
-                    // else {
-
-                    // }
-
                 });
             },
         }).addTo(map);
 
-        //map.flyToBounds(feature.getBounds());
         polylines.push(feature);
-        // Create polyline from GeoJSON coordinates
+
         if (geojson.features[0].geometry.type === "LineString") {
             const coordinates = geojson.features[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
-            //polyline = L.polyline(coordinates, { color: 'red' }).addTo(map);
-
         }
+
+        selectedMarkers.forEach(function (marker, index) {
+            marker.setIcon(createNumberedMarker(index + 1, false));
+        });
+    } else if (selectedMarkers.length == 1) {
         selectedMarkers.forEach(function (marker, index) {
             marker.setIcon(createNumberedMarker(index + 1, false));
         });
     }
-    else if (selectedMarkers.length == 1) {
-        selectedMarkers.forEach(function (marker, index) {
-            marker.setIcon(createNumberedMarker(index + 1, false));
-        });
-    }
-    console.log(route)
+    console.log("Final route:", route);
 }
+
 function removePolyline(polylines) {
     polylines.forEach(function (polyline, index) {
         if (polyline != null && map.hasLayer(polyline)) {
             map.removeLayer(polyline);
-
-            // const latlngs = polyline.getLatLngs();
-            // const indexToRemove = route.findIndex(coords => {
-            //     return coords.every((coord, i) => {
-            //         return coord[0] === latlngs[i].lng && coord[1] === latlngs[i].lat;
-            //     });
-            // });
-
-            // if (indexToRemove !== -1) {
-            //     route.splice(indexToRemove, 1);
-            //     polylineRoutes.splice(indexToRemove, 1);
-            // }
-
             polylines = [];
         }
     });
@@ -658,18 +926,15 @@ customers.forEach((customer) => {
     var marker = L.marker(customer.address, { icon: createDefaultMarker(false) }).addTo(markers);
 
     marker.bindPopup(popupContent, { closeButton: false })
-        .on('click', onMarkerClick);
+        .on('click', onMarkerClick).on('dblclick', dblMarkerClick);
 
     marker.on("mouseover", function (e) {
         this.openPopup();
     });
 
-    // marker.on("mouseout", function (e) {
-    //     this.closePopup();
-    // });
+
     customerMarkers[customer.id] = marker; // Store marker by order ID
-    // Add the coordinates to the latlngs array
-    //latlngs.push(customer.address);
+
 });
 
 orders.forEach((order) => {
@@ -686,11 +951,6 @@ orders.forEach((order) => {
 
     marker.bindPopup(popupContent, { closeButton: false });
 
-    function clickZoom(e) {
-        map.setView([e.latlng.lat, e.latlng.lng], zoom);
-
-        //setActive(e.target._leaflet_id);
-    }
     marker.on("mouseover", function (e) {
         this.openPopup();
     });
@@ -745,23 +1005,36 @@ function createDefaultMarker(isActive = false) {
     });
 }
 function highlightNumericMarker(id, dataCollection, markerCollection) {
-    // Reset all markers to default
     Object.values(markerCollection).forEach((marker) => {
         const orderId = Object.keys(markerCollection).find(id => markerCollection[id] === marker);
         const order = dataCollection.find(order => order.id == orderId);
         marker.setIcon(createNumberedMarker(order.stopNumber));
     });
 
-    // Highlight the selected marker
     const selectedOrder = dataCollection.find(order => order.id == id);
     markerCollection[id].setIcon(createNumberedMarker(selectedOrder.stopNumber, true));
-    // Center the map on the selected marker
+
     map.setView(markerCollection[id].getLatLng(), zoom, {
         animate: true,
         pan: { duration: 1 }
     });
 }
 
+function clickZoom(m) {
+    // map.setView([e.latlng.lat, e.latlng.lng], zoom);
+
+    //setActive(e.target._leaflet_id);
+    let bounds = new L.LatLngBounds();
+
+    if (bounds.isValid()) {
+        // Valid, fit bounds
+        map.flyToBounds(bounds);
+    } else {
+        // Invalid, fit world
+        map.fitWorld();
+    }
+
+}
 function highlightMarker(markerCollection, isActive) {
 
     markers.eachLayer(function (m) {
@@ -771,43 +1044,28 @@ function highlightMarker(markerCollection, isActive) {
                 return m.getLatLng().lat === selectedRow.address[0] && m.getLatLng().lng === selectedRow.address[1];
             });
 
-            // If the marker is not in any selected row, reset its icon
-            if (!isMarkerInSelectedRows && m.getElement()) {
+            if (isMarkerInSelectedRows && m.getElement()) {
                 m.setIcon(createDefaultMarker(false));
+
             }
         }
     });
 
 
     var markerElement = markerCollection.getElement().querySelectorAll('.content-icon .icon-p');
-    // var isActive = markerElement[0].classList.contains("icon-active");
 
     if (!isActive) {
         markerElement[0].classList.remove('icon-active'); // Remove active-marker class
     } else {
         markerElement[0].classList.add('icon-active'); // Add active-marker class
     }
-
-    // Center the map on the selected marker
-    map.setView(markerCollection.getLatLng(), map.getZoom(), {
-        animate: true,
-        pan: { duration: 1 }
-    });
+    //map.flyTo(markerCollection.getLatLng(), 13)
+    map.setView(markerCollection.getLatLng(), zoom)
+    //map.setZoom(map.getZoom() > map.getMinZoom() ? map.getZoom() - 1 : map.getMinZoom());
+    // map.setView(markerCollection.getLatLng(), map.getZoom(), {
+    //     animate: true,
+    //     pan: { duration: 1 }
+    // });
 }
 
-
-// Draw polyline between markers
-//L.polyline(latlngs, { color: "blue" }).addTo(map);
 addRoutingControl(latlngs);
-// const route1Waypoints = [
-//     L.latLng(44.557356, 41.118629), // Example waypoints, replace with your actual waypoints
-//     L.latLng(44.667356, 41.228629)
-// ];
-// const route2Waypoints = [
-//     L.latLng(51.55, -0.1),
-//     L.latLng(51.54, -0.11)
-// ];
-
-// // Add multiple routes to the map
-// addRouteToMap(route1Waypoints);
-// addRouteToMap(route2Waypoints);
